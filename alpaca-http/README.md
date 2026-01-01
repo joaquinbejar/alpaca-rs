@@ -110,10 +110,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Examples
 
-Check the `examples/` directory in the repository for detailed usage:
-- `trading_orders.rs` - Creating and managing orders.
-- `market_data.rs` - Fetching real-time and historical market data.
-- `trading_bracket_order.rs` - Advanced bracket orders.
+Run examples with `cargo run -p alpaca-http --example <name>`:
+
+| Example | Description |
+|---------|-------------|
+| `http_get_account` | Get account information |
+| `http_create_market_order` | Place a market order |
+| `http_create_limit_order` | Place a limit order with GTC |
+| `http_list_orders` | List and filter orders |
+| `http_cancel_order` | Cancel an open order |
+| `http_get_positions` | List all positions |
+| `http_close_position` | Close a position |
+| `market_data` | Fetch real-time and historical market data |
+| `options_trading` | Options trading examples |
+| `trading_bracket_order` | Advanced bracket orders |
+
+```bash
+# Get account info
+cargo run -p alpaca-http --example http_get_account
+
+# Place a market order (Paper trading)
+cargo run -p alpaca-http --example http_create_market_order
+```
+
+**Note**: Examples require `ALPACA_API_KEY` and `ALPACA_API_SECRET` environment variables.
 
 ## Changelog
 
