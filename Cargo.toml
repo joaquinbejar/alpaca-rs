@@ -3,6 +3,7 @@ members = [
     "alpaca-base",
     "alpaca-http", 
     "alpaca-websocket",
+    "alpaca-fix",
 ]
 resolver = "2"
 
@@ -40,4 +41,5 @@ dotenvy = "0.15"
 alpaca-base = { path = "alpaca-base" }
 alpaca-http = { path = "alpaca-http" }
 alpaca-websocket = { path = "alpaca-websocket" }
+alpaca-fix = { path = "alpaca-fix" }
 

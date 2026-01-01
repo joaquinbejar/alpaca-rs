@@ -15,6 +15,7 @@ This workspace provides a complete Rust implementation for interacting with Alpa
 | `alpaca-base` | Core types, error handling, and utilities | 0.24.0 |
 | `alpaca-http` | HTTP REST API client for trading and market data | 0.20.0 |
 | `alpaca-websocket` | WebSocket client for real-time streaming data | 0.2.0 |
+| `alpaca-fix` | FIX protocol client for high-frequency trading | 0.1.0 |
 
 ## Features
 
@@ -28,6 +29,7 @@ This workspace provides a complete Rust implementation for interacting with Alpa
 - **Local Currency Trading**: Exchange rates and FX support
 - **IRA Accounts**: Contributions, distributions, beneficiaries
 - **OAuth 2.0**: Full OAuth authentication support
+- **FIX Protocol**: High-frequency trading via FIX 4.2/4.4
 - **Real-time Streaming**: WebSocket for live market data
 - **Error Handling**: Typed errors with retry support
 - **Testing Utilities**: Fixtures and helpers for testing
@@ -42,6 +44,7 @@ Add the crates you need to your `Cargo.toml`:
 alpaca-base = "0.24"
 alpaca-http = "0.20"
 alpaca-websocket = "0.2"
+alpaca-fix = "0.1"  # For FIX protocol (optional)
 ```
 
 ## Quick Start
@@ -220,6 +223,7 @@ assertions::assert_order_basics(&order, "AAPL", OrderSide::Buy, OrderType::Marke
 - [alpaca-base docs](https://docs.rs/alpaca-base)
 - [alpaca-http docs](https://docs.rs/alpaca-http)
 - [alpaca-websocket docs](https://docs.rs/alpaca-websocket)
+- [alpaca-fix docs](https://docs.rs/alpaca-fix)
 - [Alpaca API Documentation](https://docs.alpaca.markets/)
 
 ## License

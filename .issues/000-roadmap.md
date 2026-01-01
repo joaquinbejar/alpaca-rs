@@ -6,10 +6,13 @@ This document outlines the implementation roadmap for full Alpaca Markets API su
 
 ## Current State
 
-The library currently has basic support for:
-- Trading API: Account, Orders, Positions, Watchlists
-- Market Data: Basic stock bars, quotes, trades
-- WebSocket: Basic streaming for trades, quotes, bars
+The library now provides full coverage of the Alpaca Markets API:
+- **alpaca-base**: Core types, models, authentication, and error handling.
+- **alpaca-http**: Comprehensive REST API client for Trading, Market Data, Broker, News, etc.
+- **alpaca-websocket**: Real-time streaming for Market Data (Stocks, Crypto, News) and Trading updates.
+- **alpaca-fix**: FIX Protocol support for institutional trading.
+
+All 25 core implementation phases are complete.
 
 ## Priority Levels
 
@@ -54,13 +57,17 @@ The library currently has basic support for:
 19. [Issue 022](022-fractional-trading.md) - Fractional Trading
 20. [Issue 023](023-paper-trading.md) - Paper Trading
 
-### Phase 6: Specialized Features (Low Priority)
+### Phase 6: Specialized Features (Done)
 
 21. [Issue 014](014-calendar-clock.md) - Calendar & Clock Enhancement
 22. [Issue 019](019-fix-protocol.md) - FIX Protocol Support
 23. [Issue 020](020-statements-confirms.md) - Statements & Confirmations
 24. [Issue 024](024-local-currency-trading.md) - Local Currency Trading
 25. [Issue 025](025-ira-accounts.md) - IRA Account Support
+
+### Phase 7: Comprehensive Example Suite (Planned)
+
+26. [Examples Roadmap](examples.md) - 66 planned examples across all crates.
 
 ## Issue Summary
 
@@ -79,18 +86,19 @@ The library currently has basic support for:
 | 011 | Portfolio Management | Medium | Done |
 | 012 | Advanced Order Types | High | Done |
 | 013 | Enhanced Assets API | Medium | Done |
-| 014 | Calendar & Clock Enhancement | Low | Pending |
+| 014 | Calendar & Clock Enhancement | Low | Done |
 | 015 | Comprehensive Error Handling | High | Done |
 | 016 | Rate Limiting | Medium | Done |
 | 017 | Testing Infrastructure | High | Done |
 | 018 | Comprehensive Documentation | High | Done |
-| 019 | FIX Protocol Support | Low | Pending |
-| 020 | Statements & Confirmations | Low | Pending |
+| 019 | FIX Protocol Support | Low | Done |
+| 020 | Statements & Confirmations | Low | Done |
 | 021 | Margin & Short Selling | Medium | Done |
 | 022 | Fractional Trading | Medium | Done |
 | 023 | Paper Trading Support | Medium | Done |
-| 024 | Local Currency Trading | Low | Pending |
-| 025 | IRA Account Support | Low | Pending |
+| 024 | Local Currency Trading | Low | Done |
+| 025 | IRA Account Support | Low | Done |
+| 026 | Comprehensive Example Suite | High | Planned |
 
 ## Contributing
 
