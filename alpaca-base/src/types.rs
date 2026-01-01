@@ -614,6 +614,392 @@ pub enum OrderQueryStatus {
     All,
 }
 
+// ============================================================================
+// Options Trading Types
+// ============================================================================
+
+/// Option type (call or put).
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum OptionType {
+    /// Call option - right to buy.
+    Call,
+    /// Put option - right to sell.
+    Put,
+}
+
+/// Option style (American or European).
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum OptionStyle {
+    /// American style - can be exercised any time before expiration.
+    American,
+    /// European style - can only be exercised at expiration.
+    European,
+}
+
+/// Options trading approval level.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum OptionsApprovalLevel {
+    /// Level 1: Covered calls and cash-secured puts.
+    #[serde(rename = "1")]
+    Level1,
+    /// Level 2: Long calls and puts, spreads.
+    #[serde(rename = "2")]
+    Level2,
+    /// Level 3: Naked calls and puts.
+    #[serde(rename = "3")]
+    Level3,
+    /// Options trading disabled.
+    Disabled,
+}
+
+/// Options approval status.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum OptionsApprovalStatus {
+    /// Approval is pending.
+    Pending,
+    /// Options trading is approved.
+    Approved,
+    /// Options trading request was rejected.
+    Rejected,
+    /// Options trading is inactive.
+    Inactive,
+}
+
+/// Option contract information.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct OptionContract {
+    /// Unique contract identifier.
+    pub id: Uuid,
+    /// OCC symbol for the contract.
+    pub symbol: String,
+    /// Human-readable contract name.
+    pub name: String,
+    /// Contract status.
+    pub status: AssetStatus,
+    /// Whether the contract is tradable.
+    pub tradable: bool,
+    /// Expiration date (YYYY-MM-DD).
+    pub expiration_date: String,
+    /// Strike price in dollars.
+    pub strike_price: String,
+    /// Option type (call or put).
+    #[serde(rename = "type")]
+    pub option_type: OptionType,
+    /// Option style (American or European).
+    pub style: OptionStyle,
+    /// Underlying asset symbol.
+    pub underlying_symbol: String,
+    /// Underlying asset ID.
+    pub underlying_asset_id: Uuid,
+    /// Root symbol for the option chain.
+    pub root_symbol: String,
+    /// Open interest (number of open contracts).
+    #[serde(default)]
+    pub open_interest: Option<String>,
+    /// Date when open interest was last updated.
+    #[serde(default)]
+    pub open_interest_date: Option<String>,
+    /// Contract size (typically 100 shares).
+    #[serde(default)]
+    pub size: Option<String>,
+    /// Close price from previous trading day.
+    #[serde(default)]
+    pub close_price: Option<String>,
+    /// Date of close price.
+    #[serde(default)]
+    pub close_price_date: Option<String>,
+}
+
+/// Option Greeks for pricing and risk analysis.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct OptionGreeks {
+    /// Delta - rate of change of option price with respect to underlying price.
+    pub delta: Option<f64>,
+    /// Gamma - rate of change of delta with respect to underlying price.
+    pub gamma: Option<f64>,
+    /// Theta - rate of change of option price with respect to time (time decay).
+    pub theta: Option<f64>,
+    /// Vega - rate of change of option price with respect to volatility.
+    pub vega: Option<f64>,
+    /// Rho - rate of change of option price with respect to interest rate.
+    pub rho: Option<f64>,
+}
+
+/// Option quote data.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct OptionQuote {
+    /// Quote timestamp.
+    #[serde(rename = "t")]
+    pub timestamp: DateTime<Utc>,
+    /// Bid price.
+    #[serde(rename = "bp")]
+    pub bid_price: f64,
+    /// Bid size.
+    #[serde(rename = "bs")]
+    pub bid_size: u64,
+    /// Ask price.
+    #[serde(rename = "ap")]
+    pub ask_price: f64,
+    /// Ask size.
+    #[serde(rename = "as")]
+    pub ask_size: u64,
+    /// Bid exchange.
+    #[serde(rename = "bx")]
+    pub bid_exchange: String,
+    /// Ask exchange.
+    #[serde(rename = "ax")]
+    pub ask_exchange: String,
+    /// Condition flags.
+    #[serde(rename = "c", default)]
+    pub conditions: Option<String>,
+}
+
+/// Option trade data.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct OptionTrade {
+    /// Trade timestamp.
+    #[serde(rename = "t")]
+    pub timestamp: DateTime<Utc>,
+    /// Trade price.
+    #[serde(rename = "p")]
+    pub price: f64,
+    /// Trade size (number of contracts).
+    #[serde(rename = "s")]
+    pub size: u64,
+    /// Exchange where trade occurred.
+    #[serde(rename = "x")]
+    pub exchange: String,
+    /// Trade conditions.
+    #[serde(rename = "c", default)]
+    pub conditions: Option<String>,
+}
+
+/// Option bar (OHLCV) data.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct OptionBar {
+    /// Bar timestamp.
+    #[serde(rename = "t")]
+    pub timestamp: DateTime<Utc>,
+    /// Open price.
+    #[serde(rename = "o")]
+    pub open: f64,
+    /// High price.
+    #[serde(rename = "h")]
+    pub high: f64,
+    /// Low price.
+    #[serde(rename = "l")]
+    pub low: f64,
+    /// Close price.
+    #[serde(rename = "c")]
+    pub close: f64,
+    /// Volume (number of contracts traded).
+    #[serde(rename = "v")]
+    pub volume: u64,
+    /// Number of trades.
+    #[serde(rename = "n", default)]
+    pub trade_count: Option<u64>,
+    /// Volume-weighted average price.
+    #[serde(rename = "vw", default)]
+    pub vwap: Option<f64>,
+}
+
+/// Option snapshot with latest quote, trade, and greeks.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct OptionSnapshot {
+    /// Latest quote.
+    #[serde(rename = "latestQuote")]
+    pub latest_quote: Option<OptionQuote>,
+    /// Latest trade.
+    #[serde(rename = "latestTrade")]
+    pub latest_trade: Option<OptionTrade>,
+    /// Option Greeks.
+    pub greeks: Option<OptionGreeks>,
+    /// Implied volatility.
+    #[serde(rename = "impliedVolatility")]
+    pub implied_volatility: Option<f64>,
+}
+
+/// Options chain entry for a specific strike/expiration.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct OptionChainEntry {
+    /// Option contract.
+    pub contract: OptionContract,
+    /// Snapshot data.
+    pub snapshot: Option<OptionSnapshot>,
+}
+
+/// Request to exercise an option.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct OptionExerciseRequest {
+    /// Symbol of the option contract to exercise.
+    pub symbol: String,
+    /// Number of contracts to exercise.
+    #[serde(default)]
+    pub qty: Option<String>,
+}
+
+/// Options approval request for an account.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct OptionsApprovalRequest {
+    /// Requested options trading level.
+    pub options_trading_level: OptionsApprovalLevel,
+}
+
+/// Options approval status response.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct OptionsApproval {
+    /// Current options trading level.
+    pub options_trading_level: Option<OptionsApprovalLevel>,
+    /// Approval status.
+    pub status: OptionsApprovalStatus,
+    /// Reason for rejection (if applicable).
+    #[serde(default)]
+    pub reason: Option<String>,
+}
+
+/// Parameters for querying option contracts.
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct OptionContractParams {
+    /// Filter by underlying symbol.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub underlying_symbol: Option<String>,
+    /// Filter by expiration date (YYYY-MM-DD).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expiration_date: Option<String>,
+    /// Filter by expiration date greater than or equal to.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expiration_date_gte: Option<String>,
+    /// Filter by expiration date less than or equal to.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expiration_date_lte: Option<String>,
+    /// Filter by strike price greater than or equal to.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub strike_price_gte: Option<String>,
+    /// Filter by strike price less than or equal to.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub strike_price_lte: Option<String>,
+    /// Filter by option type (call or put).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "type")]
+    pub option_type: Option<OptionType>,
+    /// Filter by root symbol.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub root_symbol: Option<String>,
+    /// Filter by style (american or european).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub style: Option<OptionStyle>,
+    /// Maximum number of results.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub limit: Option<u32>,
+    /// Pagination token.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub page_token: Option<String>,
+}
+
+impl OptionContractParams {
+    /// Create new empty parameters.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Filter by underlying symbol.
+    #[must_use]
+    pub fn underlying_symbol(mut self, symbol: &str) -> Self {
+        self.underlying_symbol = Some(symbol.to_string());
+        self
+    }
+
+    /// Filter by expiration date.
+    #[must_use]
+    pub fn expiration_date(mut self, date: &str) -> Self {
+        self.expiration_date = Some(date.to_string());
+        self
+    }
+
+    /// Filter by option type.
+    #[must_use]
+    pub fn option_type(mut self, option_type: OptionType) -> Self {
+        self.option_type = Some(option_type);
+        self
+    }
+
+    /// Filter by strike price range.
+    #[must_use]
+    pub fn strike_price_range(mut self, min: &str, max: &str) -> Self {
+        self.strike_price_gte = Some(min.to_string());
+        self.strike_price_lte = Some(max.to_string());
+        self
+    }
+
+    /// Set maximum number of results.
+    #[must_use]
+    pub fn limit(mut self, limit: u32) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+}
+
+/// Parameters for querying option bars.
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct OptionBarsParams {
+    /// Option symbols to query.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub symbols: Option<String>,
+    /// Timeframe for bars (e.g., "1Min", "1Hour", "1Day").
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub timeframe: Option<String>,
+    /// Start time (RFC3339 format).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub start: Option<String>,
+    /// End time (RFC3339 format).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub end: Option<String>,
+    /// Maximum number of results.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub limit: Option<u32>,
+    /// Pagination token.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub page_token: Option<String>,
+}
+
+impl OptionBarsParams {
+    /// Create new parameters with symbols.
+    #[must_use]
+    pub fn new(symbols: &str) -> Self {
+        Self {
+            symbols: Some(symbols.to_string()),
+            ..Default::default()
+        }
+    }
+
+    /// Set timeframe.
+    #[must_use]
+    pub fn timeframe(mut self, timeframe: &str) -> Self {
+        self.timeframe = Some(timeframe.to_string());
+        self
+    }
+
+    /// Set time range.
+    #[must_use]
+    pub fn time_range(mut self, start: &str, end: &str) -> Self {
+        self.start = Some(start.to_string());
+        self.end = Some(end.to_string());
+        self
+    }
+
+    /// Set maximum number of results.
+    #[must_use]
+    pub fn limit(mut self, limit: u32) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -733,5 +1119,66 @@ mod tests {
         let ot = OrderType::TrailingStop;
         let json = serde_json::to_string(&ot).unwrap();
         assert_eq!(json, "\"trailing_stop\"");
+    }
+
+    #[test]
+    fn test_option_type_serialization() {
+        let ot = OptionType::Call;
+        let json = serde_json::to_string(&ot).unwrap();
+        assert_eq!(json, "\"call\"");
+
+        let ot = OptionType::Put;
+        let json = serde_json::to_string(&ot).unwrap();
+        assert_eq!(json, "\"put\"");
+    }
+
+    #[test]
+    fn test_option_style_serialization() {
+        let style = OptionStyle::American;
+        let json = serde_json::to_string(&style).unwrap();
+        assert_eq!(json, "\"american\"");
+
+        let style = OptionStyle::European;
+        let json = serde_json::to_string(&style).unwrap();
+        assert_eq!(json, "\"european\"");
+    }
+
+    #[test]
+    fn test_options_approval_level_serialization() {
+        let level = OptionsApprovalLevel::Level1;
+        let json = serde_json::to_string(&level).unwrap();
+        assert_eq!(json, "\"1\"");
+
+        let level = OptionsApprovalLevel::Level3;
+        let json = serde_json::to_string(&level).unwrap();
+        assert_eq!(json, "\"3\"");
+    }
+
+    #[test]
+    fn test_option_contract_params_builder() {
+        let params = OptionContractParams::new()
+            .underlying_symbol("AAPL")
+            .expiration_date("2024-03-15")
+            .option_type(OptionType::Call)
+            .limit(10);
+
+        assert_eq!(params.underlying_symbol, Some("AAPL".to_string()));
+        assert_eq!(params.expiration_date, Some("2024-03-15".to_string()));
+        assert_eq!(params.option_type, Some(OptionType::Call));
+        assert_eq!(params.limit, Some(10));
+    }
+
+    #[test]
+    fn test_option_bars_params_builder() {
+        let params = OptionBarsParams::new("AAPL240315C00150000")
+            .timeframe("1Day")
+            .time_range("2024-01-01", "2024-03-01")
+            .limit(100);
+
+        assert_eq!(params.symbols, Some("AAPL240315C00150000".to_string()));
+        assert_eq!(params.timeframe, Some("1Day".to_string()));
+        assert_eq!(params.start, Some("2024-01-01".to_string()));
+        assert_eq!(params.end, Some("2024-03-01".to_string()));
+        assert_eq!(params.limit, Some(100));
     }
 }
