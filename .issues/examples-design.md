@@ -55,6 +55,10 @@ To manage 81 examples efficiently, we group them into **12 logic batches**. Each
 
 ## Implementation Workflow
 
+> [!IMPORTANT]
+> **A dedicated feature branch is MANDATORY for every batch/change.**
+> Never implement examples directly on the `main` branch.
+
 Follow these steps for each batch:
 
 ### 1. Preparation

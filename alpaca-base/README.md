@@ -117,6 +117,18 @@ Run examples with `cargo run -p alpaca-base --example <name>`:
 | `base_order_types` | Order type configurations (OrderType, OrderSide, TimeInForce) |
 | `base_bar_params_builder` | Build market data query parameters |
 | `base_asset_filtering` | Filter and query assets |
+| `base_bracket_order_config` | Configure bracket orders with TakeProfit/StopLoss |
+| `base_option_contract_params` | Build options contract query parameters |
+| `base_broker_account_types` | Broker account KYC types (Contact, Identity, etc.) |
+| `base_oauth_config` | OAuth 2.0 configuration and token handling |
+| `base_rate_limit_config` | Rate limiting configuration and status |
+| `base_calendar_types` | Market calendar and clock types |
+| `base_currency_conversion` | Currency types and exchange rates |
+| `base_ira_types` | IRA account types and transactions |
+| `base_test_fixtures`* | Test fixtures for unit testing |
+| `base_test_assertions`* | Assertion helpers for testing |
+
+*Requires `--features test-utils`
 
 ```bash
 # Example: Load credentials

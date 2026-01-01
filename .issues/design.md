@@ -158,9 +158,11 @@ gh label list
 
 ---
 
-## Workflow Overview
-
 **⚠️ CRITICAL: This is a strictly sequential workflow. Complete each issue fully (including merge and release) before starting the next one. Never have multiple open PRs.**
+
+> [!IMPORTANT]
+> **Every single change, no matter how small, MUST be performed in a dedicated feature branch.**
+> Never commit directly to the `main` branch.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐

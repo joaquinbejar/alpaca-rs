@@ -19,7 +19,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Check
-        run: cargo check --all-targets --all-features
+        run: cargo check --all-targets --all-features --workspace
 
   test:
     name: Test
@@ -52,7 +52,34 @@ jobs:
           components: clippy
       - uses: Swatinem/rust-cache@v2
       - name: Clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+  makefile-validation:
+    name: Makefile Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: Validate lint-fix
+        run: make lint-fix
+      - name: Validate pre-push
+        run: make pre-push
+
+  semver:
+    name: SemVer Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install cargo-semver-checks
+        run: cargo install cargo-semver-checks
+      - name: Check SemVer
+        run: cargo semver-checks check-release --workspace
 
   docs:
     name: Documentation
@@ -62,7 +89,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Build docs
-        run: cargo doc --no-deps --all-features
+        run: cargo doc --workspace --no-deps --all-features
         env:
           RUSTDOCFLAGS: -D warnings
 
@@ -80,5 +107,6 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: cobertura.xml
           fail_ci_if_error: false
