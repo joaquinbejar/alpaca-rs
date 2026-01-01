@@ -1,6 +1,6 @@
 [package]
 name = "alpaca-base"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2024"
 authors = ["Joaquin Bejar <jb@taunais.com>"]
 description = "Base library with common structs, traits, and logic for Alpaca API clients"
@@ -10,6 +10,10 @@ repository = "https://github.com/joaquinbejar/alpaca-rs"
 homepage = "https://github.com/joaquinbejar/alpaca-rs"
 keywords = ["finance", "alpaca", "trading", "api"]
 categories = ["finance", "data-structures", "api-bindings"]
+
+[features]
+default = []
+test-utils = []
 
 [dependencies]
 serde = { workspace = true, features = ["derive"] }
