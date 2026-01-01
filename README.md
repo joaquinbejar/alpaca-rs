@@ -12,15 +12,22 @@ This workspace provides a complete Rust implementation for interacting with Alpa
 
 | Crate | Description | Version |
 |-------|-------------|---------|
-| `alpaca-base` | Core types, error handling, and utilities | 0.4.0 |
-| `alpaca-http` | HTTP REST API client for trading and market data | 0.3.0 |
-| `alpaca-websocket` | WebSocket client for real-time streaming data | 0.1.0 |
+| `alpaca-base` | Core types, error handling, and utilities | 0.24.0 |
+| `alpaca-http` | HTTP REST API client for trading and market data | 0.20.0 |
+| `alpaca-websocket` | WebSocket client for real-time streaming data | 0.2.0 |
 
 ## Features
 
 - **Trading API**: Accounts, orders, positions, watchlists
-- **Market Data API**: Stocks, crypto bars, quotes, trades
+- **Market Data API**: Stocks, crypto, options bars, quotes, trades
 - **Advanced Orders**: Bracket, OCO, OTO, trailing stop
+- **Options Trading**: Options contracts and market data
+- **Broker API**: Account management, funding, journals, compliance
+- **Corporate Actions**: Dividends, splits, and other events
+- **Calendar & Clock**: Market hours and trading calendar
+- **Local Currency Trading**: Exchange rates and FX support
+- **IRA Accounts**: Contributions, distributions, beneficiaries
+- **OAuth 2.0**: Full OAuth authentication support
 - **Real-time Streaming**: WebSocket for live market data
 - **Error Handling**: Typed errors with retry support
 - **Testing Utilities**: Fixtures and helpers for testing
@@ -32,9 +39,9 @@ Add the crates you need to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-alpaca-base = "0.4"
-alpaca-http = "0.3"
-alpaca-websocket = "0.1"
+alpaca-base = "0.24"
+alpaca-http = "0.20"
+alpaca-websocket = "0.2"
 ```
 
 ## Quick Start
@@ -197,7 +204,7 @@ The library includes test utilities for your own tests:
 
 ```rust
 // Enable test-utils feature
-// alpaca-base = { version = "0.4", features = ["test-utils"] }
+// alpaca-base = { version = "0.24", features = ["test-utils"] }
 
 use alpaca_base::test_utils::{fixtures, assertions};
 

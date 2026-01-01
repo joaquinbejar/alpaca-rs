@@ -13,6 +13,7 @@ WebSocket client for the Alpaca trading platform real-time data and account upda
 - **Automatic Reconnection**: Intelligent connection management with configurable retry logic.
 - **Multiple Stream Support**: Connect to Market Data v2 and Trading streams simultaneously.
 - **Type-Safe Messages**: Strongly typed representations for all WebSocket message types.
+- **Configurable**: Flexible configuration for timeouts, reconnection, and buffer sizes.
 
 ## Installation
 
@@ -52,13 +53,47 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 - `AlpacaWebSocketClient` - The primary client for managing WebSocket connections.
 - `WebSocketConfig` - Configuration options for timeouts and reconnection behavior.
-- `StreamType` - Enum specifying which Alpaca stream to connect to (MarketData or Trading).
+- `StreamType` - Enum specifying which Alpaca stream to connect to.
+
+### Stream Types
+
+- `StreamType::MarketData` - Real-time stock market data (IEX or SIP)
+- `StreamType::CryptoData` - Real-time cryptocurrency data
+- `StreamType::Trading` - Account and order updates
+- `StreamType::News` - Real-time news feed
 
 ### Main Modules
 
 - `client` - WebSocket client implementation.
+- `config` - Configuration types and builders.
 - `messages` - Message types for all streaming data.
-- `streams` - Stream handling and subscription logic.
+
+### Message Types
+
+#### Market Data
+- `TradeMessage` - Real-time trade executions
+- `QuoteMessage` - Real-time bid/ask quotes
+- `BarMessage` - Real-time OHLCV bars
+
+#### Trading Updates
+- `TradeUpdateEvent` - Order status changes (fill, cancel, etc.)
+- `ConnectionStatus` - Connection state notifications
+
+#### Subscriptions
+- `Subscription` - Builder for managing stream subscriptions
+
+## Configuration
+
+```rust
+use alpaca_websocket::config::WebSocketConfig;
+
+let config = WebSocketConfig::builder()
+    .reconnect_enabled(true)
+    .reconnect_max_attempts(5)
+    .reconnect_delay_ms(1000)
+    .ping_interval_secs(30)
+    .build();
+```
 
 ## Examples
 
@@ -70,8 +105,11 @@ See the `examples/` directory for detailed streaming usage:
 
 ### v0.2.0 (latest)
 - Integrated into the workspace structure.
-- Improved subscription management.
+- Improved subscription management with builder pattern.
 - Added support for enhanced Crypto Market Data.
+- Added News stream support.
+- Improved connection status handling.
+- Added configurable reconnection logic.
 
 ## License
 
