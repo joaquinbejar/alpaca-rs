@@ -2297,6 +2297,76 @@ impl AlpacaHttpClient {
     }
 }
 
+// ============================================================================
+// Portfolio Management Endpoints
+// ============================================================================
+
+impl AlpacaHttpClient {
+    /// Create rebalancing portfolio.
+    ///
+    /// # Arguments
+    /// * `request` - Portfolio creation request
+    ///
+    /// # Returns
+    /// Created portfolio
+    pub async fn create_rebalance_portfolio(
+        &self,
+        request: &RebalancePortfolioRequest,
+    ) -> Result<RebalancePortfolio> {
+        self.post("/v1/rebalancing/portfolios", request).await
+    }
+
+    /// List rebalancing portfolios.
+    ///
+    /// # Returns
+    /// List of portfolios
+    pub async fn list_rebalance_portfolios(&self) -> Result<Vec<RebalancePortfolio>> {
+        self.get("/v1/rebalancing/portfolios").await
+    }
+
+    /// Get rebalancing portfolio.
+    ///
+    /// # Arguments
+    /// * `portfolio_id` - Portfolio ID
+    ///
+    /// # Returns
+    /// Portfolio
+    pub async fn get_rebalance_portfolio(&self, portfolio_id: &str) -> Result<RebalancePortfolio> {
+        self.get(&format!("/v1/rebalancing/portfolios/{}", portfolio_id))
+            .await
+    }
+
+    /// Delete rebalancing portfolio.
+    ///
+    /// # Arguments
+    /// * `portfolio_id` - Portfolio ID
+    pub async fn delete_rebalance_portfolio(&self, portfolio_id: &str) -> Result<()> {
+        let _: serde_json::Value = self
+            .delete(&format!("/v1/rebalancing/portfolios/{}", portfolio_id))
+            .await?;
+        Ok(())
+    }
+
+    /// Execute rebalance run.
+    ///
+    /// # Arguments
+    /// * `request` - Rebalance run request
+    ///
+    /// # Returns
+    /// Rebalance run
+    pub async fn execute_rebalance(&self, request: &RebalanceRunRequest) -> Result<RebalanceRun> {
+        self.post("/v1/rebalancing/runs", request).await
+    }
+
+    /// List rebalance runs.
+    ///
+    /// # Returns
+    /// List of rebalance runs
+    pub async fn list_rebalance_runs(&self) -> Result<Vec<RebalanceRun>> {
+        self.get("/v1/rebalancing/runs").await
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

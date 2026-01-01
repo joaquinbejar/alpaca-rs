@@ -3839,6 +3839,301 @@ impl ListActivitiesParams {
     }
 }
 
+// ============================================================================
+// Portfolio Management Types
+// ============================================================================
+
+/// Portfolio history timeframe.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+pub enum PortfolioTimeframe {
+    /// 1 minute.
+    #[serde(rename = "1Min")]
+    OneMin,
+    /// 5 minutes.
+    #[serde(rename = "5Min")]
+    FiveMin,
+    /// 15 minutes.
+    #[serde(rename = "15Min")]
+    FifteenMin,
+    /// 1 hour.
+    #[serde(rename = "1H")]
+    OneHour,
+    /// 1 day.
+    #[serde(rename = "1D")]
+    OneDay,
+}
+
+/// Portfolio history period.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+pub enum PortfolioPeriod {
+    /// 1 day.
+    #[serde(rename = "1D")]
+    OneDay,
+    /// 1 week.
+    #[serde(rename = "1W")]
+    OneWeek,
+    /// 1 month.
+    #[serde(rename = "1M")]
+    OneMonth,
+    /// 3 months.
+    #[serde(rename = "3M")]
+    ThreeMonths,
+    /// 1 year.
+    #[serde(rename = "1A")]
+    OneYear,
+    /// All time.
+    #[serde(rename = "all")]
+    All,
+}
+
+/// Parameters for portfolio history.
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct PortfolioHistoryParams {
+    /// Period.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub period: Option<String>,
+    /// Timeframe.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub timeframe: Option<String>,
+    /// End date.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub date_end: Option<String>,
+    /// Include extended hours.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extended_hours: Option<bool>,
+    /// Intraday reporting.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub intraday_reporting: Option<String>,
+    /// PnL reset.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pnl_reset: Option<String>,
+}
+
+impl PortfolioHistoryParams {
+    /// Create new empty parameters.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Set period.
+    #[must_use]
+    pub fn period(mut self, period: PortfolioPeriod) -> Self {
+        self.period = Some(match period {
+            PortfolioPeriod::OneDay => "1D".to_string(),
+            PortfolioPeriod::OneWeek => "1W".to_string(),
+            PortfolioPeriod::OneMonth => "1M".to_string(),
+            PortfolioPeriod::ThreeMonths => "3M".to_string(),
+            PortfolioPeriod::OneYear => "1A".to_string(),
+            PortfolioPeriod::All => "all".to_string(),
+        });
+        self
+    }
+
+    /// Set timeframe.
+    #[must_use]
+    pub fn timeframe(mut self, timeframe: PortfolioTimeframe) -> Self {
+        self.timeframe = Some(match timeframe {
+            PortfolioTimeframe::OneMin => "1Min".to_string(),
+            PortfolioTimeframe::FiveMin => "5Min".to_string(),
+            PortfolioTimeframe::FifteenMin => "15Min".to_string(),
+            PortfolioTimeframe::OneHour => "1H".to_string(),
+            PortfolioTimeframe::OneDay => "1D".to_string(),
+        });
+        self
+    }
+
+    /// Set end date.
+    #[must_use]
+    pub fn date_end(mut self, date_end: &str) -> Self {
+        self.date_end = Some(date_end.to_string());
+        self
+    }
+
+    /// Include extended hours.
+    #[must_use]
+    pub fn extended_hours(mut self, extended_hours: bool) -> Self {
+        self.extended_hours = Some(extended_hours);
+        self
+    }
+}
+
+/// Target allocation for rebalancing.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TargetAllocation {
+    /// Symbol.
+    pub symbol: String,
+    /// Target percentage (0-100).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub percent: Option<f64>,
+    /// Target notional value.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub notional: Option<String>,
+}
+
+impl TargetAllocation {
+    /// Create allocation by percentage.
+    #[must_use]
+    pub fn percent(symbol: &str, percent: f64) -> Self {
+        Self {
+            symbol: symbol.to_string(),
+            percent: Some(percent),
+            notional: None,
+        }
+    }
+
+    /// Create allocation by notional value.
+    #[must_use]
+    pub fn notional(symbol: &str, notional: &str) -> Self {
+        Self {
+            symbol: symbol.to_string(),
+            percent: None,
+            notional: Some(notional.to_string()),
+        }
+    }
+}
+
+/// Rebalance status.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum RebalanceStatus {
+    /// Pending.
+    Pending,
+    /// In progress.
+    InProgress,
+    /// Completed.
+    Completed,
+    /// Failed.
+    Failed,
+    /// Canceled.
+    Canceled,
+}
+
+/// Rebalance portfolio request.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct RebalancePortfolioRequest {
+    /// Portfolio name.
+    pub name: String,
+    /// Description.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    /// Target allocations.
+    pub weights: Vec<TargetAllocation>,
+}
+
+impl RebalancePortfolioRequest {
+    /// Create new rebalance portfolio request.
+    #[must_use]
+    pub fn new(name: &str, weights: Vec<TargetAllocation>) -> Self {
+        Self {
+            name: name.to_string(),
+            description: None,
+            weights,
+        }
+    }
+
+    /// Set description.
+    #[must_use]
+    pub fn description(mut self, description: &str) -> Self {
+        self.description = Some(description.to_string());
+        self
+    }
+}
+
+/// Rebalance portfolio.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct RebalancePortfolio {
+    /// Portfolio ID.
+    pub id: Uuid,
+    /// Portfolio name.
+    pub name: String,
+    /// Description.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    /// Target allocations.
+    pub weights: Vec<TargetAllocation>,
+    /// Created at.
+    pub created_at: DateTime<Utc>,
+    /// Updated at.
+    pub updated_at: DateTime<Utc>,
+}
+
+/// Rebalance run request.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct RebalanceRunRequest {
+    /// Account ID.
+    pub account_id: String,
+    /// Portfolio ID.
+    pub portfolio_id: String,
+    /// Type of rebalance.
+    #[serde(rename = "type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub run_type: Option<String>,
+}
+
+impl RebalanceRunRequest {
+    /// Create new rebalance run request.
+    #[must_use]
+    pub fn new(account_id: &str, portfolio_id: &str) -> Self {
+        Self {
+            account_id: account_id.to_string(),
+            portfolio_id: portfolio_id.to_string(),
+            run_type: None,
+        }
+    }
+}
+
+/// Rebalance run result.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct RebalanceRun {
+    /// Run ID.
+    pub id: Uuid,
+    /// Account ID.
+    pub account_id: String,
+    /// Portfolio ID.
+    pub portfolio_id: String,
+    /// Status.
+    pub status: RebalanceStatus,
+    /// Created at.
+    pub created_at: DateTime<Utc>,
+    /// Completed at.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub completed_at: Option<DateTime<Utc>>,
+}
+
+/// Close position request.
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct ClosePositionParams {
+    /// Quantity to close.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub qty: Option<String>,
+    /// Percentage to close (0-100).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub percentage: Option<String>,
+}
+
+impl ClosePositionParams {
+    /// Create new empty parameters.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Close specific quantity.
+    #[must_use]
+    pub fn qty(mut self, qty: &str) -> Self {
+        self.qty = Some(qty.to_string());
+        self
+    }
+
+    /// Close percentage.
+    #[must_use]
+    pub fn percentage(mut self, percentage: &str) -> Self {
+        self.percentage = Some(percentage.to_string());
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -4312,5 +4607,25 @@ mod tests {
         assert_eq!(params.activity_types, Some("FILL,DIV".to_string()));
         assert_eq!(params.direction, Some(SortDirection::Desc));
         assert_eq!(params.page_size, Some(100));
+    }
+
+    #[test]
+    fn test_portfolio_history_params_builder() {
+        let params = PortfolioHistoryParams::new()
+            .period(PortfolioPeriod::OneMonth)
+            .timeframe(PortfolioTimeframe::OneDay)
+            .extended_hours(true);
+
+        assert_eq!(params.period, Some("1M".to_string()));
+        assert_eq!(params.timeframe, Some("1D".to_string()));
+        assert_eq!(params.extended_hours, Some(true));
+    }
+
+    #[test]
+    fn test_target_allocation_percent() {
+        let alloc = TargetAllocation::percent("AAPL", 25.0);
+        assert_eq!(alloc.symbol, "AAPL");
+        assert_eq!(alloc.percent, Some(25.0));
+        assert!(alloc.notional.is_none());
     }
 }
