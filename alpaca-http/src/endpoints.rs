@@ -758,10 +758,35 @@ pub struct ClosePositionResponse {
     pub status: i32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+/// Request to close a position.
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct ClosePositionRequest {
+    /// Quantity to close.
     pub qty: Option<String>,
+    /// Percentage of position to close.
     pub percentage: Option<String>,
+}
+
+impl ClosePositionRequest {
+    /// Create a new close position request (closes entire position).
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Set quantity to close.
+    #[must_use]
+    pub fn qty(mut self, qty: impl Into<String>) -> Self {
+        self.qty = Some(qty.into());
+        self
+    }
+
+    /// Set percentage to close.
+    #[must_use]
+    pub fn percentage(mut self, percentage: impl Into<String>) -> Self {
+        self.percentage = Some(percentage.into());
+        self
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]

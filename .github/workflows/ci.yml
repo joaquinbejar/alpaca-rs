@@ -71,6 +71,7 @@ jobs:
   semver:
     name: SemVer Checks
     runs-on: ubuntu-latest
+    continue-on-error: true # Allow failure if crates aren't published yet
     steps:
       - uses: actions/checkout@v4
         with:

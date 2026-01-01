@@ -83,9 +83,11 @@ Each example MUST:
 ```bash
 # Verify the example compiles and runs (requires ALPACA_API_KEY/SECRET)
 cargo run --example <name>
-# Run linter
-make lint-fix
+# Run linter and tests locally
+make lint-fix pre-push
 ```
+
+**MANDATORY**: GitHub Actions MUST pass for the PR before it can be merged.
 
 ### 5. PR & Merge
 - Create a single PR for the entire batch.
@@ -95,4 +97,5 @@ make lint-fix
 ## Definition of "Done" for Phase 7
 - 81 examples implemented and placed in `examples/`.
 - All examples are documented in their respective crate's `README.md`.
+- All examples pass GitHub Actions (CI) checks, including `makefile-validation` and `semver`.
 - All 12 examples-related GitHub issues are closed.

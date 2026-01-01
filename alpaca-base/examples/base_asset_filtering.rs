@@ -146,7 +146,7 @@ fn demonstrate_filtering_patterns() -> Result<(), Box<dyn std::error::Error>> {
     println!("     {:?}", params);
 
     println!("\n  4. Filter assets in code (example):");
-    let sample_assets = vec![
+    let sample_assets = [
         create_sample_asset("AAPL", true, true),
         create_sample_asset("MSFT", true, true),
         create_sample_asset("PENNY", true, false), // Not shortable
