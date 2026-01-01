@@ -5201,6 +5201,128 @@ impl DocumentParams {
     }
 }
 
+// ============================================================================
+// Local Currency Trading Types
+// ============================================================================
+
+/// Supported currencies for Local Currency Trading.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "UPPERCASE")]
+#[derive(Default)]
+pub enum Currency {
+    /// US Dollar.
+    #[default]
+    Usd,
+    /// Euro.
+    Eur,
+    /// British Pound.
+    Gbp,
+    /// Canadian Dollar.
+    Cad,
+    /// Australian Dollar.
+    Aud,
+    /// Japanese Yen.
+    Jpy,
+    /// Swiss Franc.
+    Chf,
+}
+
+impl std::fmt::Display for Currency {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Usd => write!(f, "USD"),
+            Self::Eur => write!(f, "EUR"),
+            Self::Gbp => write!(f, "GBP"),
+            Self::Cad => write!(f, "CAD"),
+            Self::Aud => write!(f, "AUD"),
+            Self::Jpy => write!(f, "JPY"),
+            Self::Chf => write!(f, "CHF"),
+        }
+    }
+}
+
+/// Exchange rate between two currencies.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ExchangeRate {
+    /// Base currency.
+    pub base: Currency,
+    /// Quote currency.
+    pub quote: Currency,
+    /// Exchange rate.
+    pub rate: f64,
+    /// Timestamp.
+    pub timestamp: String,
+}
+
+impl ExchangeRate {
+    /// Create new exchange rate.
+    #[must_use]
+    pub fn new(base: Currency, quote: Currency, rate: f64) -> Self {
+        Self {
+            base,
+            quote,
+            rate,
+            timestamp: String::new(),
+        }
+    }
+
+    /// Convert amount from base to quote currency.
+    #[must_use]
+    pub fn convert(&self, amount: f64) -> f64 {
+        amount * self.rate
+    }
+
+    /// Get inverse rate.
+    #[must_use]
+    pub fn inverse(&self) -> f64 {
+        if self.rate != 0.0 {
+            1.0 / self.rate
+        } else {
+            0.0
+        }
+    }
+}
+
+/// Currency pair for exchange rate queries.
+#[derive(Debug, Clone)]
+pub struct CurrencyPair {
+    /// Base currency.
+    pub base: Currency,
+    /// Quote currency.
+    pub quote: Currency,
+}
+
+impl CurrencyPair {
+    /// Create new currency pair.
+    #[must_use]
+    pub fn new(base: Currency, quote: Currency) -> Self {
+        Self { base, quote }
+    }
+
+    /// Get pair string (e.g., "EUR/USD").
+    #[must_use]
+    pub fn as_string(&self) -> String {
+        format!("{}/{}", self.base, self.quote)
+    }
+}
+
+/// Local currency position values.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct LctPosition {
+    /// Symbol.
+    pub symbol: String,
+    /// Quantity.
+    pub qty: String,
+    /// Market value in local currency.
+    pub market_value_local: String,
+    /// Cost basis in local currency.
+    pub cost_basis_local: String,
+    /// Unrealized P&L in local currency.
+    pub unrealized_pl_local: String,
+    /// Local currency.
+    pub currency: Currency,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -5840,5 +5962,18 @@ mod tests {
         assert_eq!(params.start, Some("2024-01-01".to_string()));
         assert_eq!(params.end, Some("2024-12-31".to_string()));
         assert_eq!(params.document_type, Some(StatementType::AccountStatement));
+    }
+
+    #[test]
+    fn test_exchange_rate_conversion() {
+        let rate = ExchangeRate::new(Currency::Eur, Currency::Usd, 1.10);
+        assert!((rate.convert(100.0) - 110.0).abs() < 0.0001);
+        assert!((rate.inverse() - 0.909_090_909_090_909_1).abs() < 0.0001);
+    }
+
+    #[test]
+    fn test_currency_pair() {
+        let pair = CurrencyPair::new(Currency::Eur, Currency::Usd);
+        assert_eq!(pair.as_string(), "EUR/USD");
     }
 }
