@@ -1,5 +1,10 @@
 # alpaca-base
 
+[![License](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+[![Crates.io](https://img.shields.io/crates/v/alpaca-base.svg)](https://crates.io/crates/alpaca-base)
+[![Downloads](https://img.shields.io/crates/d/alpaca-base.svg)](https://crates.io/crates/alpaca-base)
+[![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.rs/alpaca-base)
+
 Base library with common structs, traits, and logic for Alpaca API clients.
 
 ## Overview

@@ -1,5 +1,10 @@
 # alpaca-http
 
+[![License](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+[![Crates.io](https://img.shields.io/crates/v/alpaca-http.svg)](https://crates.io/crates/alpaca-http)
+[![Downloads](https://img.shields.io/crates/d/alpaca-http.svg)](https://crates.io/crates/alpaca-http)
+[![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.rs/alpaca-http)
+
 HTTP REST API client for the Alpaca trading platform.
 
 ## Overview
@@ -121,6 +126,12 @@ Run examples with `cargo run -p alpaca-http --example <name>`:
 | `http_cancel_order` | Cancel an open order |
 | `http_get_positions` | List all positions |
 | `http_close_position` | Close a position |
+| `http_get_bars` | Fetch historical OHLCV bar data |
+| `http_get_quotes` | Fetch bid/ask quote data |
+| `http_get_trades` | Fetch trade data |
+| `http_list_assets` | List and filter assets |
+| `http_get_clock` | Get market clock status |
+| `http_get_calendar` | Get market calendar |
 | `market_data` | Fetch real-time and historical market data |
 | `options_trading` | Options trading examples |
 | `trading_bracket_order` | Advanced bracket orders |

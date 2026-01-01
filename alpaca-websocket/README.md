@@ -1,5 +1,10 @@
 # alpaca-websocket
 
+[![License](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+[![Crates.io](https://img.shields.io/crates/v/alpaca-websocket.svg)](https://crates.io/crates/alpaca-websocket)
+[![Downloads](https://img.shields.io/crates/d/alpaca-websocket.svg)](https://crates.io/crates/alpaca-websocket)
+[![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.rs/alpaca-websocket)
+
 WebSocket client for the Alpaca trading platform real-time data and account updates.
 
 ## Overview

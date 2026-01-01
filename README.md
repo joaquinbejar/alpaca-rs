@@ -1,8 +1,16 @@
 # alpaca-rs
 
-[![CI](https://github.com/joaquinbejar/alpaca-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/joaquinbejar/alpaca-rs/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/joaquinbejar/alpaca-rs/branch/main/graph/badge.svg)](https://codecov.io/gh/joaquinbejar/alpaca-rs)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+[![Crates.io](https://img.shields.io/crates/v/alpaca-rs.svg)](https://crates.io/crates/alpaca-rs)
+[![Downloads](https://img.shields.io/crates/d/alpaca-rs.svg)](https://crates.io/crates/alpaca-rs)
+[![Stars](https://img.shields.io/github/stars/joaquinbejar/alpaca-rs.svg)](https://github.com/joaquinbejar/alpaca-rs/stargazers)
+[![Issues](https://img.shields.io/github/issues/joaquinbejar/alpaca-rs.svg)](https://github.com/joaquinbejar/alpaca-rs/issues)
+[![PRs](https://img.shields.io/github/issues-pr/joaquinbejar/alpaca-rs.svg)](https://github.com/joaquinbejar/alpaca-rs/pulls)
+
+[![Build Status](https://github.com/joaquinbejar/alpaca-rs/workflows/CI/badge.svg)](https://github.com/joaquinbejar/alpaca-rs/actions)
+[![Coverage](https://img.shields.io/codecov/c/github/joaquinbejar/alpaca-rs)](https://codecov.io/gh/joaquinbejar/alpaca-rs)
+[![Dependencies](https://img.shields.io/librariesio/github/joaquinbejar/alpaca-rs)](https://libraries.io/github/joaquinbejar/alpaca-rs)
+[![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.rs/alpaca-rs)
 
 A comprehensive Rust client library for the [Alpaca Markets](https://alpaca.markets/) trading API.
 
