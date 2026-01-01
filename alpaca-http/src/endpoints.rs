@@ -1049,6 +1049,207 @@ impl AlpacaHttpClient {
     }
 }
 
+// ============================================================================
+// Enhanced Stock Market Data Endpoints
+// ============================================================================
+
+/// Response for multi-symbol bars.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MultiBarsResponse {
+    /// Map of symbol to bars.
+    pub bars: std::collections::HashMap<String, Vec<Bar>>,
+    /// Token for next page of results.
+    pub next_page_token: Option<String>,
+}
+
+/// Response for multi-symbol quotes.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MultiQuotesResponse {
+    /// Map of symbol to quotes.
+    pub quotes: std::collections::HashMap<String, Vec<Quote>>,
+    /// Token for next page of results.
+    pub next_page_token: Option<String>,
+}
+
+/// Response for multi-symbol trades.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MultiTradesResponse {
+    /// Map of symbol to trades.
+    pub trades: std::collections::HashMap<String, Vec<Trade>>,
+    /// Token for next page of results.
+    pub next_page_token: Option<String>,
+}
+
+/// Response for stock snapshots.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct StockSnapshotsResponse {
+    /// Map of symbol to snapshot.
+    #[serde(flatten)]
+    pub snapshots: std::collections::HashMap<String, StockSnapshot>,
+}
+
+/// Response for corporate actions.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CorporateActionsResponse {
+    /// List of corporate actions.
+    pub corporate_actions: Vec<CorporateAction>,
+    /// Token for next page of results.
+    pub next_page_token: Option<String>,
+}
+
+/// Response for latest bars.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LatestBarsResponse {
+    /// Map of symbol to latest bar.
+    pub bars: std::collections::HashMap<String, Bar>,
+}
+
+/// Response for latest quotes.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LatestQuotesResponse {
+    /// Map of symbol to latest quote.
+    pub quotes: std::collections::HashMap<String, Quote>,
+}
+
+/// Response for latest trades.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LatestTradesResponse {
+    /// Map of symbol to latest trade.
+    pub trades: std::collections::HashMap<String, Trade>,
+}
+
+impl AlpacaHttpClient {
+    // ========================================================================
+    // Multi-Symbol Market Data Endpoints
+    // ========================================================================
+
+    /// Get historical bars for multiple symbols.
+    ///
+    /// # Arguments
+    /// * `params` - Query parameters including symbols, timeframe, and date range
+    ///
+    /// # Returns
+    /// Historical bar data for all requested symbols
+    pub async fn get_stock_bars(&self, params: &MultiBarsParams) -> Result<MultiBarsResponse> {
+        self.get_with_params("/v2/stocks/bars", params).await
+    }
+
+    /// Get historical quotes for multiple symbols.
+    ///
+    /// # Arguments
+    /// * `params` - Query parameters including symbols and date range
+    ///
+    /// # Returns
+    /// Historical quote data for all requested symbols
+    pub async fn get_stock_quotes(
+        &self,
+        params: &MultiQuotesParams,
+    ) -> Result<MultiQuotesResponse> {
+        self.get_with_params("/v2/stocks/quotes", params).await
+    }
+
+    /// Get historical trades for multiple symbols.
+    ///
+    /// # Arguments
+    /// * `params` - Query parameters including symbols and date range
+    ///
+    /// # Returns
+    /// Historical trade data for all requested symbols
+    pub async fn get_stock_trades(
+        &self,
+        params: &MultiTradesParams,
+    ) -> Result<MultiTradesResponse> {
+        self.get_with_params("/v2/stocks/trades", params).await
+    }
+
+    /// Get snapshots for multiple symbols.
+    ///
+    /// # Arguments
+    /// * `symbols` - Comma-separated list of symbols
+    ///
+    /// # Returns
+    /// Current snapshots with latest trade, quote, and bars
+    pub async fn get_stock_snapshots(&self, symbols: &str) -> Result<StockSnapshotsResponse> {
+        #[derive(Serialize)]
+        struct Params<'a> {
+            symbols: &'a str,
+        }
+        self.get_with_params("/v2/stocks/snapshots", &Params { symbols })
+            .await
+    }
+
+    // ========================================================================
+    // Latest Market Data Endpoints
+    // ========================================================================
+
+    /// Get latest bars for multiple symbols.
+    ///
+    /// # Arguments
+    /// * `symbols` - Comma-separated list of symbols
+    ///
+    /// # Returns
+    /// Latest bar for each symbol
+    pub async fn get_latest_bars(&self, symbols: &str) -> Result<LatestBarsResponse> {
+        #[derive(Serialize)]
+        struct Params<'a> {
+            symbols: &'a str,
+        }
+        self.get_with_params("/v2/stocks/bars/latest", &Params { symbols })
+            .await
+    }
+
+    /// Get latest quotes for multiple symbols.
+    ///
+    /// # Arguments
+    /// * `symbols` - Comma-separated list of symbols
+    ///
+    /// # Returns
+    /// Latest quote for each symbol
+    pub async fn get_latest_quotes(&self, symbols: &str) -> Result<LatestQuotesResponse> {
+        #[derive(Serialize)]
+        struct Params<'a> {
+            symbols: &'a str,
+        }
+        self.get_with_params("/v2/stocks/quotes/latest", &Params { symbols })
+            .await
+    }
+
+    /// Get latest trades for multiple symbols.
+    ///
+    /// # Arguments
+    /// * `symbols` - Comma-separated list of symbols
+    ///
+    /// # Returns
+    /// Latest trade for each symbol
+    pub async fn get_latest_trades(&self, symbols: &str) -> Result<LatestTradesResponse> {
+        #[derive(Serialize)]
+        struct Params<'a> {
+            symbols: &'a str,
+        }
+        self.get_with_params("/v2/stocks/trades/latest", &Params { symbols })
+            .await
+    }
+
+    // ========================================================================
+    // Corporate Actions Endpoints
+    // ========================================================================
+
+    /// Get corporate action announcements.
+    ///
+    /// # Arguments
+    /// * `params` - Query parameters for filtering corporate actions
+    ///
+    /// # Returns
+    /// List of corporate action announcements
+    pub async fn get_corporate_actions(
+        &self,
+        params: &CorporateActionsParams,
+    ) -> Result<CorporateActionsResponse> {
+        self.get_with_params("/v1beta1/corporate-actions/announcements", params)
+            .await
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
