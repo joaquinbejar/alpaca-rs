@@ -1677,6 +1677,283 @@ impl AlpacaHttpClient {
     }
 }
 
+// ============================================================================
+// Enhanced Crypto Trading Endpoints
+// ============================================================================
+
+/// Response for crypto snapshots (multi-symbol).
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MultiCryptoSnapshotsResponse {
+    /// Map of symbol to snapshot.
+    pub snapshots: std::collections::HashMap<String, CryptoSnapshot>,
+}
+
+/// Response for multi-symbol crypto bars.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MultiCryptoBarsResponse {
+    /// Map of symbol to bars.
+    pub bars: std::collections::HashMap<String, Vec<CryptoBar>>,
+    /// Next page token.
+    pub next_page_token: Option<String>,
+}
+
+/// Response for latest crypto bars (multi-symbol).
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LatestCryptoBarsResponse {
+    /// Map of symbol to latest bar.
+    pub bars: std::collections::HashMap<String, CryptoBar>,
+}
+
+/// Response for latest crypto quotes (multi-symbol).
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LatestCryptoQuotesResponse {
+    /// Map of symbol to latest quote.
+    pub quotes: std::collections::HashMap<String, CryptoQuote>,
+}
+
+/// Response for latest crypto trades (multi-symbol).
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LatestCryptoTradesResponse {
+    /// Map of symbol to latest trade.
+    pub trades: std::collections::HashMap<String, CryptoTrade>,
+}
+
+/// Response for crypto orderbooks.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CryptoOrderbooksResponse {
+    /// Map of symbol to orderbook.
+    pub orderbooks: std::collections::HashMap<String, CryptoOrderbook>,
+}
+
+impl AlpacaHttpClient {
+    // ========================================================================
+    // Crypto Wallet Endpoints (Broker API)
+    // ========================================================================
+
+    /// List crypto wallets for an account.
+    ///
+    /// # Arguments
+    /// * `account_id` - The account ID
+    ///
+    /// # Returns
+    /// List of crypto wallets
+    pub async fn list_crypto_wallets(&self, account_id: &str) -> Result<Vec<BrokerCryptoWallet>> {
+        self.get(&format!("/v1/accounts/{}/wallets", account_id))
+            .await
+    }
+
+    /// Create a crypto wallet for an account.
+    ///
+    /// # Arguments
+    /// * `account_id` - The account ID
+    /// * `request` - Wallet creation request
+    ///
+    /// # Returns
+    /// The created wallet
+    pub async fn create_crypto_wallet(
+        &self,
+        account_id: &str,
+        request: &CreateCryptoWalletRequest,
+    ) -> Result<BrokerCryptoWallet> {
+        self.post(&format!("/v1/accounts/{}/wallets", account_id), request)
+            .await
+    }
+
+    /// Get a crypto wallet by asset.
+    ///
+    /// # Arguments
+    /// * `account_id` - The account ID
+    /// * `asset` - The asset symbol (e.g., BTC, ETH)
+    ///
+    /// # Returns
+    /// The crypto wallet
+    pub async fn get_crypto_wallet(
+        &self,
+        account_id: &str,
+        asset: &str,
+    ) -> Result<BrokerCryptoWallet> {
+        self.get(&format!("/v1/accounts/{}/wallets/{}", account_id, asset))
+            .await
+    }
+
+    /// List crypto wallet transfers.
+    ///
+    /// # Arguments
+    /// * `account_id` - The account ID
+    ///
+    /// # Returns
+    /// List of crypto transfers
+    pub async fn list_crypto_transfers(&self, account_id: &str) -> Result<Vec<CryptoTransfer>> {
+        self.get(&format!("/v1/accounts/{}/wallets/transfers", account_id))
+            .await
+    }
+
+    /// Create a crypto wallet transfer.
+    ///
+    /// # Arguments
+    /// * `account_id` - The account ID
+    /// * `asset` - The asset symbol
+    /// * `request` - Transfer request
+    ///
+    /// # Returns
+    /// The created transfer
+    pub async fn create_crypto_transfer(
+        &self,
+        account_id: &str,
+        asset: &str,
+        request: &CreateCryptoTransferRequest,
+    ) -> Result<CryptoTransfer> {
+        self.post(
+            &format!("/v1/accounts/{}/wallets/{}/transfers", account_id, asset),
+            request,
+        )
+        .await
+    }
+
+    /// List whitelisted crypto addresses.
+    ///
+    /// # Arguments
+    /// * `account_id` - The account ID
+    ///
+    /// # Returns
+    /// List of whitelisted addresses
+    pub async fn list_crypto_whitelists(
+        &self,
+        account_id: &str,
+    ) -> Result<Vec<CryptoWhitelistAddress>> {
+        self.get(&format!("/v1/accounts/{}/wallets/whitelists", account_id))
+            .await
+    }
+
+    /// Add a whitelisted crypto address.
+    ///
+    /// # Arguments
+    /// * `account_id` - The account ID
+    /// * `request` - Whitelist request
+    ///
+    /// # Returns
+    /// The created whitelist entry
+    pub async fn create_crypto_whitelist(
+        &self,
+        account_id: &str,
+        request: &CreateCryptoWhitelistRequest,
+    ) -> Result<CryptoWhitelistAddress> {
+        self.post(
+            &format!("/v1/accounts/{}/wallets/whitelists", account_id),
+            request,
+        )
+        .await
+    }
+
+    // ========================================================================
+    // Enhanced Crypto Market Data Endpoints
+    // ========================================================================
+
+    /// Get multi-symbol crypto bars.
+    ///
+    /// # Arguments
+    /// * `params` - Query parameters
+    ///
+    /// # Returns
+    /// Crypto bar data for multiple symbols
+    pub async fn get_multi_crypto_bars(
+        &self,
+        params: &CryptoBarsParams,
+    ) -> Result<MultiCryptoBarsResponse> {
+        self.get_with_params("/v1beta3/crypto/us/bars", params)
+            .await
+    }
+
+    /// Get latest crypto bars.
+    ///
+    /// # Arguments
+    /// * `symbols` - Comma-separated list of symbols
+    ///
+    /// # Returns
+    /// Latest bar for each symbol
+    pub async fn get_latest_crypto_bars(&self, symbols: &str) -> Result<LatestCryptoBarsResponse> {
+        #[derive(Serialize)]
+        struct Params<'a> {
+            symbols: &'a str,
+        }
+        self.get_with_params("/v1beta3/crypto/us/latest/bars", &Params { symbols })
+            .await
+    }
+
+    /// Get latest crypto quotes.
+    ///
+    /// # Arguments
+    /// * `symbols` - Comma-separated list of symbols
+    ///
+    /// # Returns
+    /// Latest quote for each symbol
+    pub async fn get_latest_crypto_quotes(
+        &self,
+        symbols: &str,
+    ) -> Result<LatestCryptoQuotesResponse> {
+        #[derive(Serialize)]
+        struct Params<'a> {
+            symbols: &'a str,
+        }
+        self.get_with_params("/v1beta3/crypto/us/latest/quotes", &Params { symbols })
+            .await
+    }
+
+    /// Get latest crypto trades.
+    ///
+    /// # Arguments
+    /// * `symbols` - Comma-separated list of symbols
+    ///
+    /// # Returns
+    /// Latest trade for each symbol
+    pub async fn get_latest_crypto_trades(
+        &self,
+        symbols: &str,
+    ) -> Result<LatestCryptoTradesResponse> {
+        #[derive(Serialize)]
+        struct Params<'a> {
+            symbols: &'a str,
+        }
+        self.get_with_params("/v1beta3/crypto/us/latest/trades", &Params { symbols })
+            .await
+    }
+
+    /// Get crypto snapshots for multiple symbols.
+    ///
+    /// # Arguments
+    /// * `symbols` - Comma-separated list of symbols
+    ///
+    /// # Returns
+    /// Snapshots for each symbol
+    pub async fn get_multi_crypto_snapshots(
+        &self,
+        symbols: &str,
+    ) -> Result<MultiCryptoSnapshotsResponse> {
+        #[derive(Serialize)]
+        struct Params<'a> {
+            symbols: &'a str,
+        }
+        self.get_with_params("/v1beta3/crypto/us/snapshots", &Params { symbols })
+            .await
+    }
+
+    /// Get crypto orderbooks.
+    ///
+    /// # Arguments
+    /// * `symbols` - Comma-separated list of symbols
+    ///
+    /// # Returns
+    /// Orderbooks for each symbol
+    pub async fn get_crypto_orderbooks(&self, symbols: &str) -> Result<CryptoOrderbooksResponse> {
+        #[derive(Serialize)]
+        struct Params<'a> {
+            symbols: &'a str,
+        }
+        self.get_with_params("/v1beta3/crypto/us/latest/orderbooks", &Params { symbols })
+            .await
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

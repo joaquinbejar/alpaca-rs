@@ -2471,6 +2471,377 @@ pub struct ListJournalsParams {
     pub from_account: Option<String>,
 }
 
+// ============================================================================
+// Enhanced Crypto Trading Types
+// ============================================================================
+
+/// Crypto blockchain chain.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum CryptoChain {
+    /// Bitcoin.
+    Btc,
+    /// Ethereum.
+    Eth,
+    /// Solana.
+    Sol,
+    /// Avalanche.
+    Avax,
+    /// Polygon.
+    Matic,
+    /// Arbitrum.
+    Arb,
+    /// Base.
+    Base,
+}
+
+/// Crypto transfer status.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum CryptoTransferStatus {
+    /// Pending approval.
+    Pending,
+    /// Approved.
+    Approved,
+    /// Pending send to blockchain.
+    PendingSend,
+    /// Sent to blockchain.
+    Sent,
+    /// Complete.
+    Complete,
+    /// Rejected.
+    Rejected,
+    /// Failed.
+    Failed,
+}
+
+/// Crypto transfer direction.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum CryptoTransferDirection {
+    /// Incoming (deposit).
+    Incoming,
+    /// Outgoing (withdrawal).
+    Outgoing,
+}
+
+/// Crypto wallet status.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum CryptoWalletStatus {
+    /// Active.
+    Active,
+    /// Inactive.
+    Inactive,
+    /// Pending.
+    Pending,
+}
+
+/// Broker crypto wallet for Broker API.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct BrokerCryptoWallet {
+    /// Wallet ID.
+    pub id: String,
+    /// Account ID.
+    pub account_id: String,
+    /// Asset symbol (e.g., BTC, ETH).
+    pub asset: String,
+    /// Wallet address.
+    pub address: String,
+    /// Blockchain chain.
+    pub chain: CryptoChain,
+    /// Wallet status.
+    pub status: CryptoWalletStatus,
+    /// Created at timestamp.
+    pub created_at: DateTime<Utc>,
+}
+
+/// Request to create a crypto wallet.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CreateCryptoWalletRequest {
+    /// Asset symbol (e.g., BTC, ETH).
+    pub asset: String,
+}
+
+impl CreateCryptoWalletRequest {
+    /// Create new wallet request.
+    #[must_use]
+    pub fn new(asset: &str) -> Self {
+        Self {
+            asset: asset.to_string(),
+        }
+    }
+}
+
+/// Crypto transfer.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CryptoTransfer {
+    /// Transfer ID.
+    pub id: String,
+    /// Wallet ID.
+    pub wallet_id: String,
+    /// Account ID.
+    pub account_id: String,
+    /// Asset symbol.
+    pub asset: String,
+    /// Amount.
+    pub amount: String,
+    /// Direction.
+    pub direction: CryptoTransferDirection,
+    /// Status.
+    pub status: CryptoTransferStatus,
+    /// Fee.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fee: Option<String>,
+    /// Transaction hash.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tx_hash: Option<String>,
+    /// Created at timestamp.
+    pub created_at: DateTime<Utc>,
+    /// Updated at timestamp.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub updated_at: Option<DateTime<Utc>>,
+}
+
+/// Request to create a crypto transfer.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CreateCryptoTransferRequest {
+    /// Amount to transfer.
+    pub amount: String,
+    /// Destination address (for withdrawals).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub address: Option<String>,
+}
+
+impl CreateCryptoTransferRequest {
+    /// Create withdrawal request.
+    #[must_use]
+    pub fn withdrawal(amount: &str, address: &str) -> Self {
+        Self {
+            amount: amount.to_string(),
+            address: Some(address.to_string()),
+        }
+    }
+}
+
+/// Whitelisted crypto address.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CryptoWhitelistAddress {
+    /// Whitelist ID.
+    pub id: String,
+    /// Account ID.
+    pub account_id: String,
+    /// Asset symbol.
+    pub asset: String,
+    /// Whitelisted address.
+    pub address: String,
+    /// Chain.
+    pub chain: CryptoChain,
+    /// Label/nickname.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+    /// Created at timestamp.
+    pub created_at: DateTime<Utc>,
+}
+
+/// Request to add a whitelisted address.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CreateCryptoWhitelistRequest {
+    /// Asset symbol.
+    pub asset: String,
+    /// Address to whitelist.
+    pub address: String,
+    /// Label/nickname.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+}
+
+impl CreateCryptoWhitelistRequest {
+    /// Create new whitelist request.
+    #[must_use]
+    pub fn new(asset: &str, address: &str) -> Self {
+        Self {
+            asset: asset.to_string(),
+            address: address.to_string(),
+            label: None,
+        }
+    }
+
+    /// Set label.
+    #[must_use]
+    pub fn label(mut self, label: &str) -> Self {
+        self.label = Some(label.to_string());
+        self
+    }
+}
+
+/// Crypto snapshot with current price data.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CryptoSnapshot {
+    /// Latest trade.
+    #[serde(rename = "latestTrade")]
+    pub latest_trade: Option<CryptoTrade>,
+    /// Latest quote.
+    #[serde(rename = "latestQuote")]
+    pub latest_quote: Option<CryptoQuote>,
+    /// Minute bar.
+    #[serde(rename = "minuteBar")]
+    pub minute_bar: Option<CryptoBar>,
+    /// Daily bar.
+    #[serde(rename = "dailyBar")]
+    pub daily_bar: Option<CryptoBar>,
+    /// Previous daily bar.
+    #[serde(rename = "prevDailyBar")]
+    pub prev_daily_bar: Option<CryptoBar>,
+}
+
+/// Crypto trade data.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CryptoTrade {
+    /// Timestamp.
+    #[serde(rename = "t")]
+    pub timestamp: DateTime<Utc>,
+    /// Price.
+    #[serde(rename = "p")]
+    pub price: f64,
+    /// Size.
+    #[serde(rename = "s")]
+    pub size: f64,
+    /// Taker side.
+    #[serde(rename = "tks")]
+    pub taker_side: String,
+    /// Trade ID.
+    #[serde(rename = "i")]
+    pub id: u64,
+}
+
+/// Crypto quote data.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CryptoQuote {
+    /// Timestamp.
+    #[serde(rename = "t")]
+    pub timestamp: DateTime<Utc>,
+    /// Bid price.
+    #[serde(rename = "bp")]
+    pub bid_price: f64,
+    /// Bid size.
+    #[serde(rename = "bs")]
+    pub bid_size: f64,
+    /// Ask price.
+    #[serde(rename = "ap")]
+    pub ask_price: f64,
+    /// Ask size.
+    #[serde(rename = "as")]
+    pub ask_size: f64,
+}
+
+/// Crypto bar data.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CryptoBar {
+    /// Timestamp.
+    #[serde(rename = "t")]
+    pub timestamp: DateTime<Utc>,
+    /// Open price.
+    #[serde(rename = "o")]
+    pub open: f64,
+    /// High price.
+    #[serde(rename = "h")]
+    pub high: f64,
+    /// Low price.
+    #[serde(rename = "l")]
+    pub low: f64,
+    /// Close price.
+    #[serde(rename = "c")]
+    pub close: f64,
+    /// Volume.
+    #[serde(rename = "v")]
+    pub volume: f64,
+    /// Number of trades.
+    #[serde(rename = "n", skip_serializing_if = "Option::is_none")]
+    pub trade_count: Option<u64>,
+    /// Volume-weighted average price.
+    #[serde(rename = "vw", skip_serializing_if = "Option::is_none")]
+    pub vwap: Option<f64>,
+}
+
+/// Crypto orderbook entry.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CryptoOrderbookEntry {
+    /// Price.
+    #[serde(rename = "p")]
+    pub price: f64,
+    /// Size.
+    #[serde(rename = "s")]
+    pub size: f64,
+}
+
+/// Crypto orderbook.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CryptoOrderbook {
+    /// Timestamp.
+    #[serde(rename = "t")]
+    pub timestamp: DateTime<Utc>,
+    /// Bid entries.
+    #[serde(rename = "b")]
+    pub bids: Vec<CryptoOrderbookEntry>,
+    /// Ask entries.
+    #[serde(rename = "a")]
+    pub asks: Vec<CryptoOrderbookEntry>,
+}
+
+/// Parameters for crypto bars request.
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct CryptoBarsParams {
+    /// Comma-separated list of symbols.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub symbols: Option<String>,
+    /// Timeframe (e.g., "1Min", "1Hour", "1Day").
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub timeframe: Option<String>,
+    /// Start time (RFC3339).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub start: Option<String>,
+    /// End time (RFC3339).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub end: Option<String>,
+    /// Maximum number of bars.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub limit: Option<u32>,
+}
+
+impl CryptoBarsParams {
+    /// Create new parameters with symbols.
+    #[must_use]
+    pub fn new(symbols: &str) -> Self {
+        Self {
+            symbols: Some(symbols.to_string()),
+            ..Default::default()
+        }
+    }
+
+    /// Set timeframe.
+    #[must_use]
+    pub fn timeframe(mut self, timeframe: &str) -> Self {
+        self.timeframe = Some(timeframe.to_string());
+        self
+    }
+
+    /// Set time range.
+    #[must_use]
+    pub fn time_range(mut self, start: &str, end: &str) -> Self {
+        self.start = Some(start.to_string());
+        self.end = Some(end.to_string());
+        self
+    }
+
+    /// Set limit.
+    #[must_use]
+    pub fn limit(mut self, limit: u32) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2798,5 +3169,40 @@ mod tests {
         assert_eq!(request.entry_type, JournalEntryType::Jnlc);
         assert_eq!(request.amount, Some("500.00".to_string()));
         assert_eq!(request.description, Some("Test transfer".to_string()));
+    }
+
+    #[test]
+    fn test_crypto_chain_serialization() {
+        let chain = CryptoChain::Eth;
+        let json = serde_json::to_string(&chain).unwrap();
+        assert_eq!(json, "\"ETH\"");
+    }
+
+    #[test]
+    fn test_crypto_transfer_status_serialization() {
+        let status = CryptoTransferStatus::Complete;
+        let json = serde_json::to_string(&status).unwrap();
+        assert_eq!(json, "\"COMPLETE\"");
+    }
+
+    #[test]
+    fn test_create_crypto_whitelist_request() {
+        let request =
+            CreateCryptoWhitelistRequest::new("BTC", "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh")
+                .label("My Hardware Wallet");
+
+        assert_eq!(request.asset, "BTC");
+        assert_eq!(request.label, Some("My Hardware Wallet".to_string()));
+    }
+
+    #[test]
+    fn test_crypto_bars_params_builder() {
+        let params = CryptoBarsParams::new("BTC/USD,ETH/USD")
+            .timeframe("1Hour")
+            .limit(100);
+
+        assert_eq!(params.symbols, Some("BTC/USD,ETH/USD".to_string()));
+        assert_eq!(params.timeframe, Some("1Hour".to_string()));
+        assert_eq!(params.limit, Some(100));
     }
 }
