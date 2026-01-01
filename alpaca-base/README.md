@@ -32,137 +32,43 @@ Add to your `Cargo.toml`:
 alpaca-base = "0.24.0"
 ```
 
+## Usage
+
 While `alpaca-base` is primarily used internally by other crates in the workspace, you can use its types and authentication utilities directly.
 
 > [!TIP]
 > **Automated .env Loading**: `Credentials::from_env()` automatically attempts to load a `.env` file at the start of execution using the `dotenv` crate. You don't need to call `dotenv().ok()` manually in your code.
 
 ```rust
-use alpaca_base::auth::AlpacaCredentials;
+use alpaca_base::auth::Credentials;
 
-let credentials = AlpacaCredentials::new(
-    "your_api_key".to_string(),
-    "your_api_secret".to_string(),
-    false, // paper trading
-);
+// Automatically loads from .env
+let credentials = Credentials::from_env()?;
 ```
 
-## API Reference
+## Contribution and Contact
 
-### Main Modules
+We welcome contributions to this project! If you would like to contribute, please follow these steps:
 
-- `auth` - Authentication types and credentials management.
-- `error` - `AlpacaError` and related API error types.
-- `types` - Core data structures (Account, Order, Position, etc.).
-- `utils` - Common helper functions.
+1. Fork the repository.
+2. Create a new branch for your feature or bug fix.
+3. Make your changes and ensure that the project still builds and all tests pass.
+4. Commit your changes and push your branch to your forked repository.
+5. Submit a pull request to the main repository.
 
-### Core Types
+If you have any questions, issues, or would like to provide feedback, please feel free to contact the project maintainer:
 
-#### Trading
-- `Order`, `Position`, `Account` - Core trading entities
-- `CreateOrderRequest` - Order creation with builder pattern
-- `TakeProfit`, `StopLoss` - Advanced order legs
-- `OrderSide`, `OrderType`, `TimeInForce` - Order enums
+### **Contact Information**
+- **Author**: Joaquín Béjar García
+- **Email**: jb@taunais.com
+- **Telegram**: [@joaquin_bejar](https://t.me/joaquin_bejar)
+- **Repository**: <https://github.com/joaquinbejar/alpaca-rs>
+- **Documentation**: <https://docs.rs/alpaca-base>
 
-#### Market Data
-- `Bar`, `Quote`, `Trade` - Market data types
-- `Asset`, `AssetClass`, `AssetStatus` - Asset information
-- `CryptoBarsParams`, `MultiBarsParams` - Data query builders
+We appreciate your interest and look forward to your contributions!
 
-#### Options Trading
-- `OptionContract`, `OptionType`, `OptionStyle` - Options types
-- `OptionContractParams`, `OptionBarsParams` - Options query builders
-- `OptionsApprovalLevel` - Account approval levels
+**License**: MIT
 
-#### Broker API
-- `BrokerAccount`, `BrokerAccountStatus` - Broker account types
-- `Contact`, `Identity`, `Disclosures` - KYC types
-- `AchRelationship`, `Transfer`, `Journal` - Money movement
-- `TrustedContact`, `Agreement` - Compliance types
+## Disclaimer
 
-#### Corporate Actions
-- `CorporateAction`, `CorporateActionType` - Corporate action types
-- `CorporateActionsParams` - Query builder
-
-#### Calendar & Clock
-- `MarketClock`, `CalendarDay` - Market timing
-- `MarketSession` - Session types (pre-market, regular, post-market)
-- `CalendarParams`, `TradingDay` - Calendar utilities
-
-#### FIX Protocol
-- `FixVersion`, `FixSessionConfig` - FIX configuration
-- `FixMsgType`, `FixSessionState` - FIX message types
-- `FixSequenceNumbers` - Sequence management
-
-#### Statements & Documents
-- `StatementType`, `TaxFormType` - Document types
-- `AccountDocument`, `TradeConfirmation`, `TaxDocument` - Document structs
-- `DocumentParams` - Query builder
-
-#### Local Currency Trading
-- `Currency` - Supported currencies (USD, EUR, GBP, etc.)
-- `ExchangeRate`, `CurrencyPair` - FX types
-- `LctPosition` - Local currency positions
-
-#### IRA Accounts
-- `IraAccountType` - IRA types (Traditional, Roth, SEP, SIMPLE)
-- `IraContribution`, `IraDistribution` - IRA transactions
-- `IraBeneficiary` - Beneficiary management
-
-#### OAuth
-- `OAuthConfig`, `OAuthScope`, `OAuthToken` - OAuth 2.0 support
-
-#### Utilities
-- `RateLimitConfig`, `RateLimitStatus` - Rate limiting
-- `TradingEnvironment`, `EnvironmentGuard` - Environment management
-
-## Examples
-
-Run examples with `cargo run -p alpaca-base --example <name>`:
-
-| Example | Description |
-|---------|-------------|
-| `base_credentials_from_env` | Load credentials from environment variables |
-| `base_error_handling` | Error types and handling patterns |
-| `base_order_types` | Order type configurations (OrderType, OrderSide, TimeInForce) |
-| `base_bar_params_builder` | Build market data query parameters |
-| `base_asset_filtering` | Filter and query assets |
-| `base_bracket_order_config` | Configure bracket orders with TakeProfit/StopLoss |
-| `base_option_contract_params` | Build options contract query parameters |
-| `base_broker_account_types` | Broker account KYC types (Contact, Identity, etc.) |
-| `base_oauth_config` | OAuth 2.0 configuration and token handling |
-| `base_rate_limit_config` | Rate limiting configuration and status |
-| `base_calendar_types` | Market calendar and clock types |
-| `base_currency_conversion` | Currency types and exchange rates |
-| `base_ira_types` | IRA account types and transactions |
-| `base_test_fixtures`* | Test fixtures for unit testing |
-| `base_test_assertions`* | Assertion helpers for testing |
-
-*Requires `--features test-utils`
-
-```bash
-# Example: Load credentials
-cargo run -p alpaca-base --example base_credentials_from_env
-
-# Example: Error handling patterns
-cargo run -p alpaca-base --example base_error_handling
-```
-
-## Changelog
-
-### v0.24.0 (latest)
-- Added IRA Account Support (IraAccountType, IraContribution, IraDistribution, IraBeneficiary)
-- Added Local Currency Trading (Currency, ExchangeRate, CurrencyPair, LctPosition)
-- Added Statements & Confirmations (StatementType, AccountDocument, TaxDocument)
-- Added FIX Protocol types (FixVersion, FixSessionConfig, FixMsgType)
-- Added Calendar & Clock (MarketClock, CalendarDay, MarketSession)
-- Added OAuth 2.0 support
-- Added Corporate Actions types
-- Added Options Trading support
-- Added Broker API types
-- Enhanced error handling with `thiserror`
-- Comprehensive API models updated to latest Alpaca specification
-
-## License
-
-MIT
+This software is not officially associated with Alpaca Markets. Trading financial instruments carries risk, and this library is provided as-is without any guarantees. Always test thoroughly with a paper trading account before using in a live trading environment.
