@@ -4,8 +4,15 @@
 
 [![License](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 [![Crates.io](https://img.shields.io/crates/v/alpaca-rs.svg)](https://crates.io/crates/alpaca-rs)
-[![Downloads](https://img.shields.io/crates/d/alpaca-rs.svg)](https://crates.io/crates/d/alpaca-rs)
+[![Downloads](https://img.shields.io/crates/d/alpaca-rs.svg)](https://crates.io/crates/alpaca-rs)
 [![Stars](https://img.shields.io/github/stars/joaquinbejar/alpaca-rs.svg)](https://github.com/joaquinbejar/alpaca-rs/stargazers)
+[![Issues](https://img.shields.io/github/issues/joaquinbejar/alpaca-rs.svg)](https://github.com/joaquinbejar/alpaca-rs/issues)
+[![PRs](https://img.shields.io/github/issues-pr/joaquinbejar/alpaca-rs.svg)](https://github.com/joaquinbejar/alpaca-rs/pulls)
+
+[![Build Status](https://github.com/joaquinbejar/alpaca-rs/workflows/CI/badge.svg)](https://github.com/joaquinbejar/alpaca-rs/actions)
+[![Coverage](https://img.shields.io/codecov/c/github/joaquinbejar/alpaca-rs)](https://codecov.io/gh/joaquinbejar/alpaca-rs)
+[![Dependencies](https://img.shields.io/librariesio/github/joaquinbejar/alpaca-rs)](https://libraries.io/github/joaquinbejar/alpaca-rs)
+[![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.rs/alpaca-rs)
 
 A comprehensive Rust client library for the [Alpaca Markets](https://alpaca.markets/) trading API.
 
@@ -47,7 +54,7 @@ Add the crates you need to your `Cargo.toml`:
 alpaca-base = "0.24"
 alpaca-http = "0.20"
 alpaca-websocket = "0.2"
-alpaca-fix = "0.1"  # For FIX protocol (optional)
+alpaca-fix = "0.2"
 ```
 
 ## Quick Start
@@ -57,12 +64,10 @@ use alpaca_http::{AlpacaHttpClient, CreateOrderRequest};
 use alpaca_base::{Credentials, Environment, OrderSide};
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error.Error>> {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create credentials and client
-    let credentials = Credentials::new(
-        std::env::var("ALPACA_API_KEY")?,
-        std::env::var("ALPACA_API_SECRET")?,
-    );
+    // Note: Credentials::from_env() automatically loads .env files
+    let credentials = Credentials::from_env()?;
     let client = AlpacaHttpClient::new(credentials, Environment::Paper)?;
 
     // Get account information
@@ -79,166 +84,38 @@ async fn main() -> Result<(), Box<dyn std::error.Error>> {
 }
 ```
 
-## Order Types
-
-### Simple Orders
-
-```rust
-// Market order
-let order = CreateOrderRequest::market("AAPL", OrderSide::Buy, "10");
-
-// Limit order
-let order = CreateOrderRequest::limit("AAPL", OrderSide::Buy, "10", "150.00");
-
-// Stop order
-let order = CreateOrderRequest::stop("AAPL", OrderSide::Sell, "10", "145.00");
-
-// Stop-limit order
-let order = CreateOrderRequest::stop_limit("AAPL", OrderSide::Sell, "10", "145.00", "144.50");
-
-// Trailing stop (by price)
-let order = CreateOrderRequest::trailing_stop_price("AAPL", OrderSide::Sell, "10", "5.00");
-
-// Trailing stop (by percent)
-let order = CreateOrderRequest::trailing_stop_percent("AAPL", OrderSide::Sell, "10", "2.5");
-```
-
-### Advanced Order Classes
-
-```rust
-use alpaca_base::{TakeProfit, StopLoss, OrderType};
-
-// Bracket order: primary order with take-profit and stop-loss legs
-let order = CreateOrderRequest::bracket(
-    "AAPL",
-    OrderSide::Buy,
-    "10",
-    OrderType::Limit,
-    TakeProfit::new("160.00"),
-    StopLoss::with_limit("140.00", "139.50"),
-)
-.with_limit_price("150.00");
-
-// OCO (One-Cancels-Other): two orders where filling one cancels the other
-let order = CreateOrderRequest::oco(
-    "AAPL",
-    OrderSide::Sell,
-    "10",
-    TakeProfit::new("160.00"),
-    StopLoss::new("140.00"),
-);
-
-// OTO (One-Triggers-Other): primary order that triggers a secondary order
-let order = CreateOrderRequest::oto(
-    "AAPL",
-    OrderSide::Buy,
-    "10",
-    OrderType::Limit,
-    StopLoss::new("140.00"),
-);
-```
-
-## Error Handling
-
-The library provides comprehensive error handling with typed errors:
-
-```rust
-use alpaca_base::{AlpacaError, ApiErrorCode};
-
-match client.create_order(&order).await {
-    Ok(order) => println!("Order created: {}", order.id),
-    Err(AlpacaError::Api { status, message, error_code, request_id }) => {
-        println!("API error {}: {}", status, message);
-        if let Some(code) = error_code {
-            if code.is_retryable() {
-                println!("This error is retryable");
-            }
-        }
-    }
-    Err(AlpacaError::RateLimit { retry_after_secs, .. }) => {
-        println!("Rate limited, retry after {} seconds", retry_after_secs);
-    }
-    Err(e) => println!("Error: {}", e),
-}
-```
-
-## Configuration
-
-### Environment Variables
-
-Set up your API credentials:
-
-```bash
-export ALPACA_API_KEY=your_api_key
-export ALPACA_API_SECRET=your_api_secret
-```
-
-### Using .env File
-
-Create a `.env` file (see `.env.example`):
-
-```env
-ALPACA_API_KEY=your_api_key
-ALPACA_API_SECRET=your_api_secret
-ALPACA_BASE_URL=https://paper-api.alpaca.markets
-```
-
-### Environments
-
-```rust
-use alpaca_base::Environment;
-
-// Paper trading (recommended for testing)
-let client = AlpacaHttpClient::new(credentials, Environment::Paper)?;
-
-// Live trading
-let client = AlpacaHttpClient::new(credentials, Environment::Live)?;
-```
-
 ## Examples
 
-Run the examples with:
+Detailed examples are available in the `examples/` directory:
+- `base_credentials_from_env.rs`: Loading API keys and automated .env support
+- `base_error_handling.rs`: Handling API errors and retryable status
+- `base_order_types.rs`: Order configuration (Market, Limit, etc.)
+- `base_bar_params_builder.rs`: Market data query builders
+- `base_asset_filtering.rs`: Querying and filtering available assets
 
-```bash
-# Bracket order example
-cargo run --example trading_bracket_order
-```
+## Contribution and Contact
 
-## Testing
+We welcome contributions to this project! If you would like to contribute, please follow these steps:
 
-The library includes test utilities for your own tests:
+1. Fork the repository.
+2. Create a new branch for your feature or bug fix.
+3. Make your changes and ensure that the project still builds and all tests pass.
+4. Commit your changes and push your branch to your forked repository.
+5. Submit a pull request to the main repository.
 
-```rust
-// Enable test-utils feature
-// alpaca-base = { version = "0.24", features = ["test-utils"] }
+If you have any questions, issues, or would like to provide feedback, please feel free to contact the project maintainer:
 
-use alpaca_base::test_utils::{fixtures, assertions};
+### **Contact Information**
+- **Author**: Joaquín Béjar García
+- **Email**: jb@taunais.com
+- **Telegram**: [@joaquin_bejar](https://t.me/joaquin_bejar)
+- **Repository**: <https://github.com/joaquinbejar/alpaca-rs>
+- **Documentation**: <https://docs.rs/alpaca-rs>
 
-let account = fixtures::sample_account();
-assertions::assert_account_active(&account);
+We appreciate your interest and look forward to your contributions!
 
-let order = fixtures::sample_order("AAPL", OrderSide::Buy, "10");
-assertions::assert_order_basics(&order, "AAPL", OrderSide::Buy, OrderType::Market);
-```
-
-## API Documentation
-
-- [alpaca-base docs](https://docs.rs/alpaca-base)
-- [alpaca-http docs](https://docs.rs/alpaca-http)
-- [alpaca-websocket docs](https://docs.rs/alpaca-websocket)
-- [alpaca-fix docs](https://docs.rs/alpaca-fix)
-- [Alpaca API Documentation](https://docs.alpaca.markets/)
-
-## License
-
-MIT License - see [LICENSE](LICENSE) for details.
-
-## Contributing
-
-Contributions are welcome! Please see:
-- [CHANGELOG.md](CHANGELOG.md) for version history
-- [.issues/](/.issues/) for planned features and roadmap
+**License**: MIT
 
 ## Disclaimer
 
-This library is not affiliated with Alpaca Markets. Use at your own risk. Always test with paper trading before using real money.
+This software is not officially associated with Alpaca Markets. Trading financial instruments carries risk, and this library is provided as-is without any guarantees. Always test thoroughly with a paper trading account before using in a live trading environment.
