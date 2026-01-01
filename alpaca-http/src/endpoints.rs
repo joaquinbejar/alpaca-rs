@@ -312,7 +312,7 @@ pub struct PortfolioHistoryParams {
     pub extended_hours: Option<bool>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct AssetParams {
     pub status: Option<AssetStatus>,
     pub asset_class: Option<AssetClass>,
@@ -806,7 +806,7 @@ pub struct AddToWatchlistRequest {
     pub symbol: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct BarsParams {
     pub start: Option<DateTime<Utc>>,
     pub end: Option<DateTime<Utc>>,
@@ -825,7 +825,7 @@ pub struct BarsResponse {
     pub next_page_token: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct QuotesParams {
     pub start: Option<DateTime<Utc>>,
     pub end: Option<DateTime<Utc>>,
@@ -843,7 +843,7 @@ pub struct QuotesResponse {
     pub next_page_token: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct TradesParams {
     pub start: Option<DateTime<Utc>>,
     pub end: Option<DateTime<Utc>>,
@@ -879,10 +879,32 @@ pub struct LatestTradeResponse {
     pub symbol: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct CalendarParams {
     pub start: Option<String>,
     pub end: Option<String>,
+}
+
+impl CalendarParams {
+    /// Create new calendar params.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Set start date.
+    #[must_use]
+    pub fn start(mut self, start: &str) -> Self {
+        self.start = Some(start.to_string());
+        self
+    }
+
+    /// Set end date.
+    #[must_use]
+    pub fn end(mut self, end: &str) -> Self {
+        self.end = Some(end.to_string());
+        self
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
