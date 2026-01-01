@@ -1454,6 +1454,229 @@ pub struct DocumentInfo {
     pub created_at: DateTime<Utc>,
 }
 
+// ============================================================================
+// Broker API - Funding & Transfers Endpoints
+// ============================================================================
+
+impl AlpacaHttpClient {
+    // ========================================================================
+    // ACH Relationship Endpoints
+    // ========================================================================
+
+    /// Create an ACH relationship for an account.
+    ///
+    /// # Arguments
+    /// * `account_id` - The account ID
+    /// * `request` - ACH relationship creation request
+    ///
+    /// # Returns
+    /// The created ACH relationship
+    pub async fn create_ach_relationship(
+        &self,
+        account_id: &str,
+        request: &CreateAchRelationshipRequest,
+    ) -> Result<AchRelationship> {
+        self.post(
+            &format!("/v1/accounts/{}/ach_relationships", account_id),
+            request,
+        )
+        .await
+    }
+
+    /// List ACH relationships for an account.
+    ///
+    /// # Arguments
+    /// * `account_id` - The account ID
+    ///
+    /// # Returns
+    /// List of ACH relationships
+    pub async fn list_ach_relationships(&self, account_id: &str) -> Result<Vec<AchRelationship>> {
+        self.get(&format!("/v1/accounts/{}/ach_relationships", account_id))
+            .await
+    }
+
+    /// Delete an ACH relationship.
+    ///
+    /// # Arguments
+    /// * `account_id` - The account ID
+    /// * `relationship_id` - The relationship ID to delete
+    pub async fn delete_ach_relationship(
+        &self,
+        account_id: &str,
+        relationship_id: &str,
+    ) -> Result<()> {
+        self.delete(&format!(
+            "/v1/accounts/{}/ach_relationships/{}",
+            account_id, relationship_id
+        ))
+        .await
+    }
+
+    // ========================================================================
+    // Transfer Endpoints
+    // ========================================================================
+
+    /// Create a transfer for an account.
+    ///
+    /// # Arguments
+    /// * `account_id` - The account ID
+    /// * `request` - Transfer creation request
+    ///
+    /// # Returns
+    /// The created transfer
+    pub async fn create_transfer(
+        &self,
+        account_id: &str,
+        request: &CreateTransferRequest,
+    ) -> Result<Transfer> {
+        self.post(&format!("/v1/accounts/{}/transfers", account_id), request)
+            .await
+    }
+
+    /// List transfers for an account.
+    ///
+    /// # Arguments
+    /// * `account_id` - The account ID
+    /// * `params` - Optional query parameters
+    ///
+    /// # Returns
+    /// List of transfers
+    pub async fn list_transfers(
+        &self,
+        account_id: &str,
+        params: &ListTransfersParams,
+    ) -> Result<Vec<Transfer>> {
+        self.get_with_params(&format!("/v1/accounts/{}/transfers", account_id), params)
+            .await
+    }
+
+    /// Get a specific transfer.
+    ///
+    /// # Arguments
+    /// * `account_id` - The account ID
+    /// * `transfer_id` - The transfer ID
+    ///
+    /// # Returns
+    /// The transfer
+    pub async fn get_transfer(&self, account_id: &str, transfer_id: &str) -> Result<Transfer> {
+        self.get(&format!(
+            "/v1/accounts/{}/transfers/{}",
+            account_id, transfer_id
+        ))
+        .await
+    }
+
+    /// Cancel a transfer.
+    ///
+    /// # Arguments
+    /// * `account_id` - The account ID
+    /// * `transfer_id` - The transfer ID to cancel
+    pub async fn cancel_transfer(&self, account_id: &str, transfer_id: &str) -> Result<()> {
+        self.delete(&format!(
+            "/v1/accounts/{}/transfers/{}",
+            account_id, transfer_id
+        ))
+        .await
+    }
+
+    // ========================================================================
+    // Wire Bank Endpoints
+    // ========================================================================
+
+    /// List recipient banks for wire transfers.
+    ///
+    /// # Arguments
+    /// * `account_id` - The account ID
+    ///
+    /// # Returns
+    /// List of wire banks
+    pub async fn list_wire_banks(&self, account_id: &str) -> Result<Vec<WireBank>> {
+        self.get(&format!("/v1/accounts/{}/recipient_banks", account_id))
+            .await
+    }
+
+    /// Create a recipient bank for wire transfers.
+    ///
+    /// # Arguments
+    /// * `account_id` - The account ID
+    /// * `request` - Wire bank creation request
+    ///
+    /// # Returns
+    /// The created wire bank
+    pub async fn create_wire_bank(
+        &self,
+        account_id: &str,
+        request: &CreateWireBankRequest,
+    ) -> Result<WireBank> {
+        self.post(
+            &format!("/v1/accounts/{}/recipient_banks", account_id),
+            request,
+        )
+        .await
+    }
+
+    /// Delete a recipient bank.
+    ///
+    /// # Arguments
+    /// * `account_id` - The account ID
+    /// * `bank_id` - The bank ID to delete
+    pub async fn delete_wire_bank(&self, account_id: &str, bank_id: &str) -> Result<()> {
+        self.delete(&format!(
+            "/v1/accounts/{}/recipient_banks/{}",
+            account_id, bank_id
+        ))
+        .await
+    }
+
+    // ========================================================================
+    // Journal Endpoints
+    // ========================================================================
+
+    /// Create a journal entry.
+    ///
+    /// # Arguments
+    /// * `request` - Journal creation request
+    ///
+    /// # Returns
+    /// The created journal
+    pub async fn create_journal(&self, request: &CreateJournalRequest) -> Result<Journal> {
+        self.post("/v1/journals", request).await
+    }
+
+    /// List journal entries.
+    ///
+    /// # Arguments
+    /// * `params` - Optional query parameters
+    ///
+    /// # Returns
+    /// List of journals
+    pub async fn list_journals(&self, params: &ListJournalsParams) -> Result<Vec<Journal>> {
+        self.get_with_params("/v1/journals", params).await
+    }
+
+    /// Create batch journal entries.
+    ///
+    /// # Arguments
+    /// * `request` - Batch journal creation request
+    ///
+    /// # Returns
+    /// List of created journals
+    pub async fn create_batch_journals(
+        &self,
+        request: &CreateBatchJournalRequest,
+    ) -> Result<Vec<Journal>> {
+        self.post("/v1/journals/batch", request).await
+    }
+
+    /// Delete a journal entry.
+    ///
+    /// # Arguments
+    /// * `journal_id` - The journal ID to delete
+    pub async fn delete_journal(&self, journal_id: &str) -> Result<()> {
+        self.delete(&format!("/v1/journals/{}", journal_id)).await
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

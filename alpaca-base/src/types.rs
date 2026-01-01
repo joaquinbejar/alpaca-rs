@@ -2010,6 +2010,467 @@ impl ListBrokerAccountsParams {
     }
 }
 
+// ============================================================================
+// Broker API Types - Funding & Transfers
+// ============================================================================
+
+/// ACH relationship status.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum AchRelationshipStatus {
+    /// Queued for processing.
+    Queued,
+    /// Approved.
+    Approved,
+    /// Pending verification.
+    Pending,
+    /// Cancel requested.
+    CancelRequested,
+    /// Canceled.
+    Canceled,
+}
+
+/// Bank account type.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum BankAccountType {
+    /// Checking account.
+    Checking,
+    /// Savings account.
+    Savings,
+}
+
+/// Transfer type.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum TransferType {
+    /// ACH transfer.
+    Ach,
+    /// Wire transfer.
+    Wire,
+}
+
+/// Transfer direction.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum TransferDirection {
+    /// Incoming transfer (deposit).
+    Incoming,
+    /// Outgoing transfer (withdrawal).
+    Outgoing,
+}
+
+/// Transfer status.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum TransferStatus {
+    /// Queued for processing.
+    Queued,
+    /// Pending.
+    Pending,
+    /// Sent to clearing.
+    SentToClearing,
+    /// Approved.
+    Approved,
+    /// Complete.
+    Complete,
+    /// Returned.
+    Returned,
+    /// Canceled.
+    Canceled,
+}
+
+/// Journal entry type.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum JournalEntryType {
+    /// Cash journal.
+    Jnlc,
+    /// Security journal.
+    Jnls,
+}
+
+/// Journal status.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum JournalStatus {
+    /// Pending.
+    Pending,
+    /// Executed.
+    Executed,
+    /// Canceled.
+    Canceled,
+    /// Rejected.
+    Rejected,
+}
+
+/// ACH relationship.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AchRelationship {
+    /// Relationship ID.
+    pub id: String,
+    /// Account ID.
+    pub account_id: String,
+    /// Status.
+    pub status: AchRelationshipStatus,
+    /// Account owner name.
+    pub account_owner_name: String,
+    /// Bank account type.
+    pub bank_account_type: BankAccountType,
+    /// Bank account number (masked).
+    pub bank_account_number: String,
+    /// Bank routing number.
+    pub bank_routing_number: String,
+    /// Nickname.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub nickname: Option<String>,
+    /// Created at timestamp.
+    pub created_at: DateTime<Utc>,
+    /// Updated at timestamp.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub updated_at: Option<DateTime<Utc>>,
+}
+
+/// Request to create an ACH relationship.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CreateAchRelationshipRequest {
+    /// Account owner name.
+    pub account_owner_name: String,
+    /// Bank account type.
+    pub bank_account_type: BankAccountType,
+    /// Bank account number.
+    pub bank_account_number: String,
+    /// Bank routing number.
+    pub bank_routing_number: String,
+    /// Nickname.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub nickname: Option<String>,
+    /// Processor token (for Plaid integration).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub processor_token: Option<String>,
+}
+
+impl CreateAchRelationshipRequest {
+    /// Create new ACH relationship request.
+    #[must_use]
+    pub fn new(
+        account_owner_name: &str,
+        bank_account_type: BankAccountType,
+        bank_account_number: &str,
+        bank_routing_number: &str,
+    ) -> Self {
+        Self {
+            account_owner_name: account_owner_name.to_string(),
+            bank_account_type,
+            bank_account_number: bank_account_number.to_string(),
+            bank_routing_number: bank_routing_number.to_string(),
+            nickname: None,
+            processor_token: None,
+        }
+    }
+
+    /// Set nickname.
+    #[must_use]
+    pub fn nickname(mut self, nickname: &str) -> Self {
+        self.nickname = Some(nickname.to_string());
+        self
+    }
+
+    /// Set processor token.
+    #[must_use]
+    pub fn processor_token(mut self, token: &str) -> Self {
+        self.processor_token = Some(token.to_string());
+        self
+    }
+}
+
+/// Transfer.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Transfer {
+    /// Transfer ID.
+    pub id: String,
+    /// Relationship ID.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub relationship_id: Option<String>,
+    /// Account ID.
+    pub account_id: String,
+    /// Transfer type.
+    #[serde(rename = "type")]
+    pub transfer_type: TransferType,
+    /// Status.
+    pub status: TransferStatus,
+    /// Amount in USD.
+    pub amount: String,
+    /// Direction.
+    pub direction: TransferDirection,
+    /// Created at timestamp.
+    pub created_at: DateTime<Utc>,
+    /// Updated at timestamp.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub updated_at: Option<DateTime<Utc>>,
+    /// Expires at timestamp.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expires_at: Option<DateTime<Utc>>,
+    /// Reason for status.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+}
+
+/// Request to create a transfer.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CreateTransferRequest {
+    /// Transfer type.
+    pub transfer_type: TransferType,
+    /// Relationship ID (for ACH).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub relationship_id: Option<String>,
+    /// Amount in USD.
+    pub amount: String,
+    /// Direction.
+    pub direction: TransferDirection,
+    /// Additional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub additional_information: Option<String>,
+}
+
+impl CreateTransferRequest {
+    /// Create new ACH transfer request.
+    #[must_use]
+    pub fn ach(relationship_id: &str, amount: &str, direction: TransferDirection) -> Self {
+        Self {
+            transfer_type: TransferType::Ach,
+            relationship_id: Some(relationship_id.to_string()),
+            amount: amount.to_string(),
+            direction,
+            additional_information: None,
+        }
+    }
+
+    /// Create new wire transfer request.
+    #[must_use]
+    pub fn wire(amount: &str, direction: TransferDirection) -> Self {
+        Self {
+            transfer_type: TransferType::Wire,
+            relationship_id: None,
+            amount: amount.to_string(),
+            direction,
+            additional_information: None,
+        }
+    }
+}
+
+/// Wire bank details.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct WireBank {
+    /// Bank ID.
+    pub id: String,
+    /// Account ID.
+    pub account_id: String,
+    /// Bank name.
+    pub name: String,
+    /// Bank code.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bank_code: Option<String>,
+    /// Bank code type.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bank_code_type: Option<String>,
+    /// Country.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub country: Option<String>,
+    /// State/Province.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub state_province: Option<String>,
+    /// Postal code.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub postal_code: Option<String>,
+    /// City.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub city: Option<String>,
+    /// Street address.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub street_address: Option<String>,
+    /// Account number.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub account_number: Option<String>,
+    /// Created at timestamp.
+    pub created_at: DateTime<Utc>,
+}
+
+/// Request to create a wire bank.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CreateWireBankRequest {
+    /// Bank name.
+    pub name: String,
+    /// Bank code.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bank_code: Option<String>,
+    /// Bank code type (ABA, BIC, etc.).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bank_code_type: Option<String>,
+    /// Country.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub country: Option<String>,
+    /// City.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub city: Option<String>,
+    /// Account number.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub account_number: Option<String>,
+}
+
+/// Journal entry.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Journal {
+    /// Journal ID.
+    pub id: String,
+    /// From account ID.
+    pub from_account: String,
+    /// To account ID.
+    pub to_account: String,
+    /// Entry type.
+    pub entry_type: JournalEntryType,
+    /// Status.
+    pub status: JournalStatus,
+    /// Net amount.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub net_amount: Option<String>,
+    /// Symbol (for security journals).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub symbol: Option<String>,
+    /// Quantity (for security journals).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub qty: Option<String>,
+    /// Description.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    /// Settle date.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub settle_date: Option<String>,
+    /// System date.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub system_date: Option<String>,
+}
+
+/// Request to create a journal entry.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CreateJournalRequest {
+    /// From account ID.
+    pub from_account: String,
+    /// To account ID.
+    pub to_account: String,
+    /// Entry type.
+    pub entry_type: JournalEntryType,
+    /// Amount (for cash journals).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub amount: Option<String>,
+    /// Symbol (for security journals).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub symbol: Option<String>,
+    /// Quantity (for security journals).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub qty: Option<String>,
+    /// Description.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+
+impl CreateJournalRequest {
+    /// Create cash journal request.
+    #[must_use]
+    pub fn cash(from_account: &str, to_account: &str, amount: &str) -> Self {
+        Self {
+            from_account: from_account.to_string(),
+            to_account: to_account.to_string(),
+            entry_type: JournalEntryType::Jnlc,
+            amount: Some(amount.to_string()),
+            symbol: None,
+            qty: None,
+            description: None,
+        }
+    }
+
+    /// Create security journal request.
+    #[must_use]
+    pub fn security(from_account: &str, to_account: &str, symbol: &str, qty: &str) -> Self {
+        Self {
+            from_account: from_account.to_string(),
+            to_account: to_account.to_string(),
+            entry_type: JournalEntryType::Jnls,
+            amount: None,
+            symbol: Some(symbol.to_string()),
+            qty: Some(qty.to_string()),
+            description: None,
+        }
+    }
+
+    /// Set description.
+    #[must_use]
+    pub fn description(mut self, description: &str) -> Self {
+        self.description = Some(description.to_string());
+        self
+    }
+}
+
+/// Batch journal entry.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct BatchJournalEntry {
+    /// To account ID.
+    pub to_account: String,
+    /// Amount.
+    pub amount: String,
+}
+
+/// Request to create batch journal entries.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CreateBatchJournalRequest {
+    /// From account ID.
+    pub from_account: String,
+    /// Entry type.
+    pub entry_type: JournalEntryType,
+    /// Entries.
+    pub entries: Vec<BatchJournalEntry>,
+    /// Description.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+
+/// Parameters for listing transfers.
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct ListTransfersParams {
+    /// Filter by direction.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub direction: Option<TransferDirection>,
+    /// Maximum number of results.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub limit: Option<u32>,
+    /// Offset for pagination.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub offset: Option<u32>,
+}
+
+/// Parameters for listing journals.
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct ListJournalsParams {
+    /// After timestamp.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub after: Option<String>,
+    /// Before timestamp.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub before: Option<String>,
+    /// Filter by status.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<JournalStatus>,
+    /// Filter by entry type.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub entry_type: Option<JournalEntryType>,
+    /// Filter by to account.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub to_account: Option<String>,
+    /// Filter by from account.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub from_account: Option<String>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2295,5 +2756,47 @@ mod tests {
 
         assert!(!disclosures.is_control_person);
         assert_eq!(disclosures.employer_name, Some("Acme Corp".to_string()));
+    }
+
+    #[test]
+    fn test_transfer_status_serialization() {
+        let status = TransferStatus::Complete;
+        let json = serde_json::to_string(&status).unwrap();
+        assert_eq!(json, "\"COMPLETE\"");
+    }
+
+    #[test]
+    fn test_create_ach_relationship_request() {
+        let request = CreateAchRelationshipRequest::new(
+            "John Doe",
+            BankAccountType::Checking,
+            "123456789",
+            "021000021",
+        )
+        .nickname("Primary Account");
+
+        assert_eq!(request.account_owner_name, "John Doe");
+        assert_eq!(request.bank_account_type, BankAccountType::Checking);
+        assert_eq!(request.nickname, Some("Primary Account".to_string()));
+    }
+
+    #[test]
+    fn test_create_transfer_request_ach() {
+        let request = CreateTransferRequest::ach("rel-123", "1000.00", TransferDirection::Incoming);
+
+        assert_eq!(request.transfer_type, TransferType::Ach);
+        assert_eq!(request.relationship_id, Some("rel-123".to_string()));
+        assert_eq!(request.amount, "1000.00");
+        assert_eq!(request.direction, TransferDirection::Incoming);
+    }
+
+    #[test]
+    fn test_create_journal_request_cash() {
+        let request =
+            CreateJournalRequest::cash("acc-from", "acc-to", "500.00").description("Test transfer");
+
+        assert_eq!(request.entry_type, JournalEntryType::Jnlc);
+        assert_eq!(request.amount, Some("500.00".to_string()));
+        assert_eq!(request.description, Some("Test transfer".to_string()));
     }
 }
