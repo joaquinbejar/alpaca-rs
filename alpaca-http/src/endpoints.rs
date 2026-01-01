@@ -2392,6 +2392,20 @@ impl AlpacaHttpClient {
     }
 }
 
+// ============================================================================
+// Paper Trading Endpoints
+// ============================================================================
+
+impl AlpacaHttpClient {
+    /// Reset paper trading account.
+    ///
+    /// # Returns
+    /// The reset account
+    pub async fn reset_paper_account(&self) -> Result<Account> {
+        self.post("/v2/account/reset", &serde_json::json!({})).await
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

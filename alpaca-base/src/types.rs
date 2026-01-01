@@ -4592,8 +4592,7 @@ impl FractionalValidator {
 }
 
 /// Fractional order type restrictions.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum FractionalOrderRestriction {
     /// Only market orders allowed.
     #[default]
@@ -4604,6 +4603,164 @@ pub enum FractionalOrderRestriction {
     All,
 }
 
+// ============================================================================
+// Paper Trading Types
+// ============================================================================
+
+/// Paper trading configuration.
+#[derive(Debug, Clone)]
+pub struct PaperTradingConfig {
+    /// Initial cash balance.
+    pub initial_cash: f64,
+    /// Whether to reset on creation.
+    pub reset_on_create: bool,
+}
+
+impl Default for PaperTradingConfig {
+    fn default() -> Self {
+        Self {
+            initial_cash: 100_000.0,
+            reset_on_create: false,
+        }
+    }
+}
+
+impl PaperTradingConfig {
+    /// Create new paper trading config.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Set initial cash balance.
+    #[must_use]
+    pub fn initial_cash(mut self, cash: f64) -> Self {
+        self.initial_cash = cash;
+        self
+    }
+
+    /// Enable reset on creation.
+    #[must_use]
+    pub fn reset_on_create(mut self, reset: bool) -> Self {
+        self.reset_on_create = reset;
+        self
+    }
+}
+
+/// Trading environment.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Default)]
+pub enum TradingEnvironment {
+    /// Live trading environment.
+    Live,
+    /// Paper trading environment.
+    #[default]
+    Paper,
+}
+
+impl TradingEnvironment {
+    /// Check if this is paper trading.
+    #[must_use]
+    pub fn is_paper(&self) -> bool {
+        matches!(self, Self::Paper)
+    }
+
+    /// Check if this is live trading.
+    #[must_use]
+    pub fn is_live(&self) -> bool {
+        matches!(self, Self::Live)
+    }
+
+    /// Get the base URL for this environment.
+    #[must_use]
+    pub fn base_url(&self) -> &'static str {
+        match self {
+            Self::Live => "https://api.alpaca.markets",
+            Self::Paper => "https://paper-api.alpaca.markets",
+        }
+    }
+
+    /// Get the data URL for this environment.
+    #[must_use]
+    pub fn data_url(&self) -> &'static str {
+        "https://data.alpaca.markets"
+    }
+
+    /// Detect environment from API key prefix.
+    #[must_use]
+    pub fn from_api_key(api_key: &str) -> Self {
+        if api_key.starts_with("PK") {
+            Self::Paper
+        } else {
+            Self::Live
+        }
+    }
+}
+
+
+/// Paper trading account reset request.
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct ResetAccountRequest {
+    /// New initial cash balance (optional).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cash: Option<String>,
+}
+
+impl ResetAccountRequest {
+    /// Create new reset request.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Set initial cash.
+    #[must_use]
+    pub fn cash(mut self, cash: &str) -> Self {
+        self.cash = Some(cash.to_string());
+        self
+    }
+}
+
+/// Environment safety guard.
+#[derive(Debug, Clone)]
+pub struct EnvironmentGuard {
+    /// Current environment.
+    environment: TradingEnvironment,
+    /// Whether live trading is allowed.
+    allow_live: bool,
+}
+
+impl EnvironmentGuard {
+    /// Create new guard for paper trading only.
+    #[must_use]
+    pub fn paper_only() -> Self {
+        Self {
+            environment: TradingEnvironment::Paper,
+            allow_live: false,
+        }
+    }
+
+    /// Create new guard allowing live trading.
+    #[must_use]
+    pub fn allow_live(environment: TradingEnvironment) -> Self {
+        Self {
+            environment,
+            allow_live: true,
+        }
+    }
+
+    /// Check if current operation is allowed.
+    #[must_use]
+    pub fn is_allowed(&self) -> bool {
+        self.allow_live || self.environment.is_paper()
+    }
+
+    /// Get current environment.
+    #[must_use]
+    pub fn environment(&self) -> TradingEnvironment {
+        self.environment
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -5162,5 +5319,36 @@ mod tests {
         assert!(amount.is_valid());
 
         assert!(NotionalAmount::from_f64(0.5).is_none());
+    }
+
+    #[test]
+    fn test_trading_environment() {
+        let paper = TradingEnvironment::Paper;
+        assert!(paper.is_paper());
+        assert!(!paper.is_live());
+        assert_eq!(paper.base_url(), "https://paper-api.alpaca.markets");
+
+        let live = TradingEnvironment::Live;
+        assert!(live.is_live());
+        assert!(!live.is_paper());
+
+        assert_eq!(
+            TradingEnvironment::from_api_key("PKABC123"),
+            TradingEnvironment::Paper
+        );
+        assert_eq!(
+            TradingEnvironment::from_api_key("AKABC123"),
+            TradingEnvironment::Live
+        );
+    }
+
+    #[test]
+    fn test_environment_guard() {
+        let guard = EnvironmentGuard::paper_only();
+        assert!(guard.is_allowed());
+        assert!(guard.environment().is_paper());
+
+        let live_guard = EnvironmentGuard::allow_live(TradingEnvironment::Live);
+        assert!(live_guard.is_allowed());
     }
 }
