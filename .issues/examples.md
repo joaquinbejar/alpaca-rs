@@ -159,6 +159,55 @@ This document outlines all examples to be created for each crate in the `alpaca-
 
 ---
 
+## alpaca-fix Examples
+
+### P1 - Connection & Session
+
+| Example | Description | Features Tested |
+|---------|-------------|-----------------|
+| `fix_connect.rs` | Connect to FIX server and establish session | `FixClient::connect()`, `FixConfig`, logon handshake |
+| `fix_disconnect.rs` | Graceful disconnect with logout | `FixClient::disconnect()`, logout confirmation |
+
+### P1 - Order Routing
+
+| Example | Description | Features Tested |
+|---------|-------------|-----------------|
+| `fix_market_order.rs` | Send market order via FIX | `NewOrderSingle::market()`, `send_order()` |
+| `fix_limit_order.rs` | Send limit order via FIX | `NewOrderSingle::limit()`, `send_order()` |
+| `fix_cancel_order.rs` | Cancel order via FIX | `OrderCancelRequest`, `cancel_order()` |
+
+### P2 - Order Management
+
+| Example | Description | Features Tested |
+|---------|-------------|-----------------|
+| `fix_replace_order.rs` | Modify order via FIX | `OrderCancelReplaceRequest`, `replace_order()` |
+| `fix_stop_order.rs` | Send stop order via FIX | `NewOrderSingle::stop()`, stop price handling |
+| `fix_execution_reports.rs` | Process execution reports | `ExecutionReport`, `parse_execution_report()` |
+
+### P2 - Message Handling
+
+| Example | Description | Features Tested |
+|---------|-------------|-----------------|
+| `fix_message_loop.rs` | Receive and process messages | `next_message()`, message channel |
+| `fix_heartbeat.rs` | Heartbeat and TestRequest handling | Background heartbeat, automatic responses |
+
+### P3 - Market Data
+
+| Example | Description | Features Tested |
+|---------|-------------|-----------------|
+| `fix_market_data_request.rs` | Request market data via FIX | `MarketDataRequest::subscribe()`, `request_market_data()` |
+| `fix_market_data_snapshot.rs` | Process market data snapshots | `MarketDataSnapshot`, `MarketDataEntry` |
+
+### P3 - Advanced Session
+
+| Example | Description | Features Tested |
+|---------|-------------|-----------------|
+| `fix_session_recovery.rs` | Handle sequence number gaps | `ResendRequest`, sequence validation |
+| `fix_config_builder.rs` | Configure FIX session options | `FixConfig::builder()`, all config options |
+| `fix_message_encoding.rs` | Encode/decode FIX messages | `FixEncoder`, `FixDecoder`, checksum validation |
+
+---
+
 ## alpaca-websocket Examples
 
 ### P1 - Market Data Streaming
@@ -278,6 +327,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 |-------|----|----|----|----|
 | alpaca-base | 3 | 2 | 10 | 15 |
 | alpaca-http | 7 | 12 | 15 | 34 |
+| alpaca-fix | 5 | 5 | 5 | 15 |
 | alpaca-websocket | 4 | 3 | 3 | 10 |
 | Integration | 2 | 2 | 3 | 7 |
-| **Total** | **16** | **19** | **31** | **66** |
+| **Total** | **21** | **24** | **36** | **81** |
