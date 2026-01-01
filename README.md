@@ -1,16 +1,11 @@
-# alpaca-rs
+<div style="text-align: center;">
+<img src="https://raw.githubusercontent.com/joaquinbejar/alpaca-rs/refs/heads/main/doc/images/logo.png" alt="alpaca-rs" style="width: 80%; height: 80%;">
+</div>
 
 [![License](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 [![Crates.io](https://img.shields.io/crates/v/alpaca-rs.svg)](https://crates.io/crates/alpaca-rs)
-[![Downloads](https://img.shields.io/crates/d/alpaca-rs.svg)](https://crates.io/crates/alpaca-rs)
+[![Downloads](https://img.shields.io/crates/d/alpaca-rs.svg)](https://crates.io/crates/d/alpaca-rs)
 [![Stars](https://img.shields.io/github/stars/joaquinbejar/alpaca-rs.svg)](https://github.com/joaquinbejar/alpaca-rs/stargazers)
-[![Issues](https://img.shields.io/github/issues/joaquinbejar/alpaca-rs.svg)](https://github.com/joaquinbejar/alpaca-rs/issues)
-[![PRs](https://img.shields.io/github/issues-pr/joaquinbejar/alpaca-rs.svg)](https://github.com/joaquinbejar/alpaca-rs/pulls)
-
-[![Build Status](https://github.com/joaquinbejar/alpaca-rs/workflows/CI/badge.svg)](https://github.com/joaquinbejar/alpaca-rs/actions)
-[![Coverage](https://img.shields.io/codecov/c/github/joaquinbejar/alpaca-rs)](https://codecov.io/gh/joaquinbejar/alpaca-rs)
-[![Dependencies](https://img.shields.io/librariesio/github/joaquinbejar/alpaca-rs)](https://libraries.io/github/joaquinbejar/alpaca-rs)
-[![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.rs/alpaca-rs)
 
 A comprehensive Rust client library for the [Alpaca Markets](https://alpaca.markets/) trading API.
 
@@ -23,7 +18,7 @@ This workspace provides a complete Rust implementation for interacting with Alpa
 | `alpaca-base` | Core types, error handling, and utilities | 0.24.0 |
 | `alpaca-http` | HTTP REST API client for trading and market data | 0.20.0 |
 | `alpaca-websocket` | WebSocket client for real-time streaming data | 0.2.0 |
-| `alpaca-fix` | FIX protocol client for high-frequency trading | 0.1.0 |
+| `alpaca-fix` | FIX protocol client for high-frequency trading | 0.2.0 |
 
 ## Features
 
@@ -62,7 +57,7 @@ use alpaca_http::{AlpacaHttpClient, CreateOrderRequest};
 use alpaca_base::{Credentials, Environment, OrderSide};
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), Box<dyn std::error.Error>> {
     // Create credentials and client
     let credentials = Credentials::new(
         std::env::var("ALPACA_API_KEY")?,

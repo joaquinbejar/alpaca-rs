@@ -1,9 +1,13 @@
-# alpaca-http
+<div style="text-align: center;">
+<img src="https://raw.githubusercontent.com/joaquinbejar/alpaca-rs/refs/heads/main/doc/images/logo.png" alt="alpaca-rs" style="width: 80%; height: 80%;">
+</div>
 
 [![License](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 [![Crates.io](https://img.shields.io/crates/v/alpaca-http.svg)](https://crates.io/crates/alpaca-http)
 [![Downloads](https://img.shields.io/crates/d/alpaca-http.svg)](https://crates.io/crates/alpaca-http)
 [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.rs/alpaca-http)
+
+# alpaca-http
 
 HTTP REST API client for the Alpaca trading platform.
 
