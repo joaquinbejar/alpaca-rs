@@ -106,6 +106,26 @@ let credentials = AlpacaCredentials::new(
 - `RateLimitConfig`, `RateLimitStatus` - Rate limiting
 - `TradingEnvironment`, `EnvironmentGuard` - Environment management
 
+## Examples
+
+Run examples with `cargo run --example <name>`:
+
+| Example | Description |
+|---------|-------------|
+| `base_credentials_from_env` | Load credentials from environment variables |
+| `base_error_handling` | Error types and handling patterns |
+| `base_order_types` | Order type configurations (OrderType, OrderSide, TimeInForce) |
+| `base_bar_params_builder` | Build market data query parameters |
+| `base_asset_filtering` | Filter and query assets |
+
+```bash
+# Example: Load credentials
+cargo run --example base_credentials_from_env
+
+# Example: Error handling patterns
+cargo run --example base_error_handling
+```
+
 ## Changelog
 
 ### v0.24.0 (latest)
