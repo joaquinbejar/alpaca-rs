@@ -1,8 +1,15 @@
-use alpaca_base::{AlpacaError, Result, auth::Credentials, types::Environment, utils::UrlBuilder};
+//! HTTP client for Alpaca API.
+//!
+//! This module provides the main HTTP client for interacting with the Alpaca REST API.
+
+use alpaca_base::{
+    AlpacaError, ApiErrorCode, RateLimitInfo, Result,
+    auth::Credentials, types::Environment, utils::UrlBuilder,
+};
 use reqwest::{Client, Method, RequestBuilder, Response};
-use serde::{Serialize, de::DeserializeOwned};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use std::time::Duration;
-use tracing::{debug, error};
+use tracing::{debug, error, warn};
 
 /// HTTP client for Alpaca API
 #[derive(Debug, Clone)]
@@ -135,7 +142,7 @@ impl AlpacaHttpClient {
         self.handle_response(response).await
     }
 
-    /// Handle the HTTP response
+    /// Handle the HTTP response with comprehensive error parsing.
     async fn handle_response<T>(&self, response: Response) -> Result<T>
     where
         T: DeserializeOwned,
@@ -145,16 +152,31 @@ impl AlpacaHttpClient {
 
         debug!("Response status: {}", status);
 
+        // Extract request ID from headers for debugging
+        let request_id = headers
+            .get("x-request-id")
+            .or_else(|| headers.get("apca-request-id"))
+            .and_then(|h| h.to_str().ok())
+            .map(String::from);
+
+        // Parse rate limit headers
+        let rate_limit_info = self.parse_rate_limit_headers(&headers);
+
         // Check for rate limiting
         if status == 429 {
             let retry_after = headers
                 .get("retry-after")
                 .and_then(|h| h.to_str().ok())
-                .unwrap_or("60");
-            return Err(AlpacaError::RateLimit(format!(
-                "Retry after {} seconds",
-                retry_after
-            )));
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(60u64);
+            
+            warn!("Rate limited, retry after {} seconds", retry_after);
+            
+            let info = rate_limit_info
+                .unwrap_or_default()
+                .with_retry_after(retry_after);
+            
+            return Err(AlpacaError::rate_limit_with_info(info));
         }
 
         // Get response text for error handling
@@ -166,23 +188,44 @@ impl AlpacaHttpClient {
         if !status.is_success() {
             error!("API error response: {}", response_text);
 
-            // Try to parse error response
-            if let Ok(error_response) = serde_json::from_str::<serde_json::Value>(&response_text) {
-                let message = error_response
-                    .get("message")
-                    .or_else(|| error_response.get("error"))
-                    .and_then(|v| v.as_str())
-                    .unwrap_or(&response_text);
+            // Try to parse structured error response
+            if let Ok(error_response) = serde_json::from_str::<ApiErrorResponseBody>(&response_text) {
+                let error_code = if error_response.code > 0 {
+                    Some(ApiErrorCode::from_code(error_response.code))
+                } else {
+                    None
+                };
 
                 return Err(AlpacaError::Api {
-                    code: status.as_u16(),
-                    message: message.to_string(),
+                    status: status.as_u16(),
+                    message: error_response.message,
+                    error_code,
+                    request_id,
+                });
+            }
+
+            // Try to parse simple error response
+            if let Ok(error_value) = serde_json::from_str::<serde_json::Value>(&response_text) {
+                let message = error_value
+                    .get("message")
+                    .or_else(|| error_value.get("error"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or(&response_text)
+                    .to_string();
+
+                return Err(AlpacaError::Api {
+                    status: status.as_u16(),
+                    message,
+                    error_code: None,
+                    request_id,
                 });
             }
 
             return Err(AlpacaError::Api {
-                code: status.as_u16(),
+                status: status.as_u16(),
                 message: response_text,
+                error_code: None,
+                request_id,
             });
         }
 
@@ -193,6 +236,34 @@ impl AlpacaHttpClient {
                 e, response_text
             ))
         })
+    }
+
+    /// Parse rate limit information from response headers.
+    fn parse_rate_limit_headers(&self, headers: &reqwest::header::HeaderMap) -> Option<RateLimitInfo> {
+        let remaining = headers
+            .get("x-ratelimit-remaining")
+            .and_then(|h| h.to_str().ok())
+            .and_then(|s| s.parse().ok());
+        
+        let limit = headers
+            .get("x-ratelimit-limit")
+            .and_then(|h| h.to_str().ok())
+            .and_then(|s| s.parse().ok());
+        
+        let reset = headers
+            .get("x-ratelimit-reset")
+            .and_then(|h| h.to_str().ok())
+            .and_then(|s| s.parse().ok());
+
+        if remaining.is_some() || limit.is_some() || reset.is_some() {
+            Some(RateLimitInfo {
+                remaining,
+                limit,
+                retry_after: reset,
+            })
+        } else {
+            None
+        }
     }
 
     /// Build the full URL for a request
@@ -248,6 +319,17 @@ impl AlpacaHttpClient {
     pub fn data_url(&self) -> &str {
         &self.data_url
     }
+}
+
+/// Internal struct for parsing API error responses.
+#[derive(Debug, Deserialize)]
+struct ApiErrorResponseBody {
+    /// Alpaca-specific error code.
+    #[serde(default)]
+    code: u32,
+    /// Error message.
+    #[serde(default)]
+    message: String,
 }
 
 #[cfg(test)]
