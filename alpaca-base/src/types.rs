@@ -3021,6 +3021,163 @@ impl NewsParams {
     }
 }
 
+// ============================================================================
+// OAuth 2.0 Types
+// ============================================================================
+
+/// OAuth 2.0 scope.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum OAuthScope {
+    /// Read account information.
+    #[serde(rename = "account:write")]
+    AccountWrite,
+    /// Trading access.
+    Trading,
+    /// Market data access.
+    Data,
+}
+
+impl std::fmt::Display for OAuthScope {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            OAuthScope::AccountWrite => write!(f, "account:write"),
+            OAuthScope::Trading => write!(f, "trading"),
+            OAuthScope::Data => write!(f, "data"),
+        }
+    }
+}
+
+/// OAuth 2.0 configuration.
+#[derive(Debug, Clone)]
+pub struct OAuthConfig {
+    /// Client ID.
+    pub client_id: String,
+    /// Client secret.
+    pub client_secret: String,
+    /// Redirect URI.
+    pub redirect_uri: String,
+    /// Requested scopes.
+    pub scopes: Vec<OAuthScope>,
+}
+
+impl OAuthConfig {
+    /// Create new OAuth configuration.
+    #[must_use]
+    pub fn new(client_id: &str, client_secret: &str, redirect_uri: &str) -> Self {
+        Self {
+            client_id: client_id.to_string(),
+            client_secret: client_secret.to_string(),
+            redirect_uri: redirect_uri.to_string(),
+            scopes: vec![],
+        }
+    }
+
+    /// Add a scope.
+    #[must_use]
+    pub fn scope(mut self, scope: OAuthScope) -> Self {
+        self.scopes.push(scope);
+        self
+    }
+
+    /// Add multiple scopes.
+    #[must_use]
+    pub fn scopes(mut self, scopes: Vec<OAuthScope>) -> Self {
+        self.scopes.extend(scopes);
+        self
+    }
+
+    /// Generate authorization URL.
+    #[must_use]
+    pub fn authorization_url(&self, state: &str) -> String {
+        let scopes_str: String = self
+            .scopes
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>()
+            .join(" ");
+
+        format!(
+            "https://app.alpaca.markets/oauth/authorize?response_type=code&client_id={}&redirect_uri={}&state={}&scope={}",
+            urlencoding::encode(&self.client_id),
+            urlencoding::encode(&self.redirect_uri),
+            urlencoding::encode(state),
+            urlencoding::encode(&scopes_str)
+        )
+    }
+}
+
+/// Request to exchange authorization code for token.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct OAuthTokenRequest {
+    /// Grant type.
+    pub grant_type: String,
+    /// Authorization code.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    /// Client ID.
+    pub client_id: String,
+    /// Client secret.
+    pub client_secret: String,
+    /// Redirect URI.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub redirect_uri: Option<String>,
+    /// Refresh token (for refresh grant).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub refresh_token: Option<String>,
+}
+
+impl OAuthTokenRequest {
+    /// Create authorization code exchange request.
+    #[must_use]
+    pub fn authorization_code(config: &OAuthConfig, code: &str) -> Self {
+        Self {
+            grant_type: "authorization_code".to_string(),
+            code: Some(code.to_string()),
+            client_id: config.client_id.clone(),
+            client_secret: config.client_secret.clone(),
+            redirect_uri: Some(config.redirect_uri.clone()),
+            refresh_token: None,
+        }
+    }
+
+    /// Create refresh token request.
+    #[must_use]
+    pub fn refresh(config: &OAuthConfig, refresh_token: &str) -> Self {
+        Self {
+            grant_type: "refresh_token".to_string(),
+            code: None,
+            client_id: config.client_id.clone(),
+            client_secret: config.client_secret.clone(),
+            redirect_uri: None,
+            refresh_token: Some(refresh_token.to_string()),
+        }
+    }
+}
+
+/// Request to revoke a token.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct OAuthRevokeRequest {
+    /// Token to revoke.
+    pub token: String,
+    /// Client ID.
+    pub client_id: String,
+    /// Client secret.
+    pub client_secret: String,
+}
+
+impl OAuthRevokeRequest {
+    /// Create revoke request.
+    #[must_use]
+    pub fn new(config: &OAuthConfig, token: &str) -> Self {
+        Self {
+            token: token.to_string(),
+            client_id: config.client_id.clone(),
+            client_secret: config.client_secret.clone(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -3404,5 +3561,36 @@ mod tests {
         assert_eq!(params.sort, Some("desc".to_string()));
         assert_eq!(params.include_content, Some(true));
         assert_eq!(params.limit, Some(50));
+    }
+
+    #[test]
+    fn test_oauth_scope_display() {
+        assert_eq!(OAuthScope::AccountWrite.to_string(), "account:write");
+        assert_eq!(OAuthScope::Trading.to_string(), "trading");
+        assert_eq!(OAuthScope::Data.to_string(), "data");
+    }
+
+    #[test]
+    fn test_oauth_config_builder() {
+        let config = OAuthConfig::new("client123", "secret456", "https://example.com/callback")
+            .scope(OAuthScope::Trading)
+            .scope(OAuthScope::Data);
+
+        assert_eq!(config.client_id, "client123");
+        assert_eq!(config.scopes.len(), 2);
+    }
+
+    #[test]
+    fn test_oauth_token_authorization_header() {
+        let token = crate::OAuthToken {
+            access_token: "abc123".to_string(),
+            refresh_token: Some("refresh456".to_string()),
+            token_type: "Bearer".to_string(),
+            expires_in: Some(3600),
+            scope: Some("trading data".to_string()),
+        };
+
+        assert_eq!(token.auth_header(), "Bearer abc123");
+        assert!(token.has_refresh_token());
     }
 }

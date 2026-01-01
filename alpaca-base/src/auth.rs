@@ -87,21 +87,33 @@ impl Credentials {
 }
 
 /// OAuth token for API access.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct OAuthToken {
     /// The access token string.
     pub access_token: String,
+    /// Refresh token for obtaining new access tokens.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub refresh_token: Option<String>,
     /// The token type (e.g., "Bearer").
     pub token_type: String,
     /// Token expiration time in seconds.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub expires_in: Option<u64>,
     /// OAuth scope granted.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
 }
 
 impl OAuthToken {
-    /// Create authorization header from OAuth token
+    /// Create authorization header from OAuth token.
+    #[must_use]
     pub fn auth_header(&self) -> String {
         format!("{} {}", self.token_type, self.access_token)
+    }
+
+    /// Check if token has a refresh token.
+    #[must_use]
+    pub fn has_refresh_token(&self) -> bool {
+        self.refresh_token.is_some()
     }
 }

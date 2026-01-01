@@ -7,7 +7,7 @@
 #![allow(missing_docs)]
 
 use crate::client::AlpacaHttpClient;
-use alpaca_base::{Result, types::*};
+use alpaca_base::{OAuthToken, Result, types::*};
 use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -2009,6 +2009,43 @@ impl AlpacaHttpClient {
     pub async fn get_latest_enhanced_news(&self, limit: u32) -> Result<EnhancedNewsResponse> {
         let params = alpaca_base::NewsParams::new().sort_desc().limit(limit);
         self.get_enhanced_news(&params).await
+    }
+}
+
+// ============================================================================
+// OAuth 2.0 Endpoints
+// ============================================================================
+
+impl AlpacaHttpClient {
+    /// Exchange authorization code for OAuth token.
+    ///
+    /// # Arguments
+    /// * `request` - Token exchange request
+    ///
+    /// # Returns
+    /// OAuth token
+    pub async fn oauth_exchange_code(&self, request: &OAuthTokenRequest) -> Result<OAuthToken> {
+        self.post("/oauth/token", request).await
+    }
+
+    /// Refresh OAuth token.
+    ///
+    /// # Arguments
+    /// * `request` - Token refresh request
+    ///
+    /// # Returns
+    /// New OAuth token
+    pub async fn oauth_refresh_token(&self, request: &OAuthTokenRequest) -> Result<OAuthToken> {
+        self.post("/oauth/token", request).await
+    }
+
+    /// Revoke OAuth token.
+    ///
+    /// # Arguments
+    /// * `request` - Token revoke request
+    pub async fn oauth_revoke_token(&self, request: &OAuthRevokeRequest) -> Result<()> {
+        let _: serde_json::Value = self.post("/oauth/revoke", request).await?;
+        Ok(())
     }
 }
 
