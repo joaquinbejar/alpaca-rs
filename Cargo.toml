@@ -1,36 +1,43 @@
-[package]
-name = "alpaca-rs"
-version = "0.1.0"
-edition = "2021"
-authors = ["Joaquin Bejar <jb@taunais.com>"]
-description = "This crate provides a client for the Alpaca Markets API"
-license = "MIT"
-readme = "README.md"
-repository = "https://github.com/joaquinbejar/alpaca-rs"
-homepage = "https://github.com/joaquinbejar/alpaca-rs"
-keywords = ["finance", "trading", "alpaca", "api", "markets"]
-categories = ["finance", "data-structures"]
-
-include = [
-    "benches/**/*",
-    "src/**/*",
-    "Cargo.toml",
-    "README.md",
-    "LICENSE",
-    "examples/**/*",
-    "tests/**/*",
-    "Makefile",
-    "rust-toolchain.toml",
-    "Draws/**/*",
-    "Docker/**/*",
+[workspace]
+members = [
+    "alpaca-base",
+    "alpaca-http", 
+    "alpaca-websocket",
 ]
+resolver = "2"
 
-
-
-[dependencies]
+[workspace.dependencies]
+# Core dependencies
 serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.48", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+thiserror = "2.0"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.0", features = ["v4", "serde"] }
 
-[lib]
-name = "alpaca_rs"
-path = "src/lib.rs"
+# HTTP client dependencies
+reqwest = { version = "0.13", features = ["json"] }
+url = "2.5"
+urlencoding = "2.1"
+serde_urlencoded = "0.7"
+
+# WebSocket dependencies
+tokio-tungstenite = { version = "0.28", features = ["rustls-tls-webpki-roots"] }
+futures-util = "0.3"
+
+# Crypto dependencies
+hmac = "0.12"
+sha2 = "0.10"
+base64 = "0.22"
+
+# Utility dependencies
+rand = "0.9"
+dotenvy = "0.15"
+
+# Internal workspace dependencies
+alpaca-base = { path = "alpaca-base" }
+alpaca-http = { path = "alpaca-http" }
+alpaca-websocket = { path = "alpaca-websocket" }
 

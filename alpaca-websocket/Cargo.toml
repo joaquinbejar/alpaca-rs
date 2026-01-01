@@ -1,0 +1,32 @@
+[package]
+name = "alpaca-websocket"
+version = "0.1.0"
+edition = "2024"
+authors = ["Joaquin Bejar <jb@taunais.com>"]
+description = "WebSocket client for Alpaca trading platform real-time data"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/joaquinbejar/alpaca-rs"
+homepage = "https://github.com/joaquinbejar/alpaca-rs"
+keywords = ["finance", "alpaca", "trading", "websocket", "realtime"]
+categories = ["finance", "api-bindings", "web-programming::websocket"]
+
+[features]
+default = []
+integration-tests = []
+
+[dependencies]
+alpaca-base = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+tokio-tungstenite = { workspace = true }
+tokio = { workspace = true }
+futures-util = { workspace = true }
+url = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+dotenvy = { workspace = true }
