@@ -10,6 +10,6 @@ pub mod types;
 pub mod utils;
 
 pub use auth::*;
-pub use error::{AlpacaError, Result};
+pub use error::{AlpacaError, ApiErrorCode, ApiErrorResponse, RateLimitInfo, Result, ValidationError};
 pub use types::*;
 pub use utils::*;
