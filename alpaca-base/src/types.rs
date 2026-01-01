@@ -3416,6 +3416,290 @@ impl SseEventParams {
     }
 }
 
+// ============================================================================
+// Enhanced Assets API Types
+// ============================================================================
+
+/// Asset attribute.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum AssetAttribute {
+    /// PTP no exception.
+    PtpNoException,
+    /// PTP with exception.
+    PtpWithException,
+    /// IPO asset.
+    Ipo,
+    /// Options enabled.
+    OptionsEnabled,
+    /// Fractional extended hours enabled.
+    FractionalEhEnabled,
+}
+
+/// Asset exchange.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum AssetExchange {
+    /// NYSE American.
+    Amex,
+    /// NYSE Arca.
+    Arca,
+    /// BATS Exchange.
+    Bats,
+    /// NYSE.
+    Nyse,
+    /// NASDAQ.
+    Nasdaq,
+    /// NASDAQ Global Market.
+    NasdaqGm,
+    /// NASDAQ Global Select.
+    NasdaqGs,
+    /// NASDAQ Capital Market.
+    NasdaqCm,
+    /// NYSE MKT.
+    Nysearca,
+    /// OTC Bulletin Board.
+    Otc,
+    /// Crypto exchange.
+    Crypto,
+    /// Options exchange.
+    #[serde(rename = "OPRA")]
+    Opra,
+}
+
+/// Enhanced asset with all fields.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct EnhancedAsset {
+    /// Asset ID.
+    pub id: Uuid,
+    /// Asset class.
+    pub class: String,
+    /// Exchange.
+    pub exchange: AssetExchange,
+    /// Symbol.
+    pub symbol: String,
+    /// Name.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    /// Status.
+    pub status: AssetStatus,
+    /// Tradable.
+    pub tradable: bool,
+    /// Marginable.
+    pub marginable: bool,
+    /// Shortable.
+    pub shortable: bool,
+    /// Easy to borrow.
+    pub easy_to_borrow: bool,
+    /// Fractionable.
+    pub fractionable: bool,
+    /// Maintenance margin requirement.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub maintenance_margin_requirement: Option<f64>,
+    /// Minimum order size.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub min_order_size: Option<String>,
+    /// Minimum trade increment.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub min_trade_increment: Option<String>,
+    /// Price increment.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub price_increment: Option<String>,
+    /// Asset attributes.
+    #[serde(default)]
+    pub attributes: Vec<AssetAttribute>,
+}
+
+/// Parameters for listing assets.
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct ListAssetsParams {
+    /// Filter by status.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<AssetStatus>,
+    /// Filter by asset class.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub asset_class: Option<String>,
+    /// Filter by exchange.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub exchange: Option<String>,
+    /// Filter by attributes.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub attributes: Option<String>,
+}
+
+impl ListAssetsParams {
+    /// Create new empty parameters.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Filter by status.
+    #[must_use]
+    pub fn status(mut self, status: AssetStatus) -> Self {
+        self.status = Some(status);
+        self
+    }
+
+    /// Filter by asset class.
+    #[must_use]
+    pub fn asset_class(mut self, asset_class: &str) -> Self {
+        self.asset_class = Some(asset_class.to_string());
+        self
+    }
+
+    /// Filter by exchange.
+    #[must_use]
+    pub fn exchange(mut self, exchange: &str) -> Self {
+        self.exchange = Some(exchange.to_string());
+        self
+    }
+
+    /// Filter by attributes.
+    #[must_use]
+    pub fn attributes(mut self, attributes: &str) -> Self {
+        self.attributes = Some(attributes.to_string());
+        self
+    }
+}
+
+/// Option contract asset.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct OptionContractAsset {
+    /// Contract ID.
+    pub id: Uuid,
+    /// Symbol.
+    pub symbol: String,
+    /// Name.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    /// Status.
+    pub status: AssetStatus,
+    /// Tradable.
+    pub tradable: bool,
+    /// Expiration date.
+    pub expiration_date: String,
+    /// Strike price.
+    pub strike_price: String,
+    /// Option type (call/put).
+    pub option_type: OptionType,
+    /// Option style (american/european).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub option_style: Option<OptionStyle>,
+    /// Underlying symbol.
+    pub underlying_symbol: String,
+    /// Underlying asset ID.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub underlying_asset_id: Option<Uuid>,
+    /// Root symbol.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub root_symbol: Option<String>,
+}
+
+/// Corporate action announcement.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CorporateActionAnnouncement {
+    /// Announcement ID.
+    pub id: String,
+    /// Corporate action type.
+    pub ca_type: String,
+    /// Corporate action sub-type.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ca_sub_type: Option<String>,
+    /// Initiating symbol.
+    pub initiating_symbol: String,
+    /// Initiating original CUSIP.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub initiating_original_cusip: Option<String>,
+    /// Target symbol.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub target_symbol: Option<String>,
+    /// Target original CUSIP.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub target_original_cusip: Option<String>,
+    /// Declaration date.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub declaration_date: Option<String>,
+    /// Ex date.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ex_date: Option<String>,
+    /// Record date.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub record_date: Option<String>,
+    /// Payable date.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub payable_date: Option<String>,
+    /// Cash amount.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cash: Option<String>,
+    /// Old rate.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub old_rate: Option<String>,
+    /// New rate.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub new_rate: Option<String>,
+}
+
+/// Parameters for listing corporate action announcements.
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct ListAnnouncementsParams {
+    /// Filter by corporate action types (comma-separated).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ca_types: Option<String>,
+    /// Start date.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub since: Option<String>,
+    /// End date.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub until: Option<String>,
+    /// Filter by symbol.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub symbol: Option<String>,
+    /// Filter by CUSIP.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cusip: Option<String>,
+    /// Date type (declaration, ex, record, payable).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub date_type: Option<String>,
+}
+
+impl ListAnnouncementsParams {
+    /// Create new empty parameters.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Filter by corporate action types.
+    #[must_use]
+    pub fn ca_types(mut self, ca_types: &str) -> Self {
+        self.ca_types = Some(ca_types.to_string());
+        self
+    }
+
+    /// Set date range.
+    #[must_use]
+    pub fn date_range(mut self, since: &str, until: &str) -> Self {
+        self.since = Some(since.to_string());
+        self.until = Some(until.to_string());
+        self
+    }
+
+    /// Filter by symbol.
+    #[must_use]
+    pub fn symbol(mut self, symbol: &str) -> Self {
+        self.symbol = Some(symbol.to_string());
+        self
+    }
+
+    /// Filter by CUSIP.
+    #[must_use]
+    pub fn cusip(mut self, cusip: &str) -> Self {
+        self.cusip = Some(cusip.to_string());
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -3847,5 +4131,24 @@ mod tests {
 
         assert_eq!(params.account_id, Some("acc-123".to_string()));
         assert_eq!(params.since, Some("2024-01-01T00:00:00Z".to_string()));
+    }
+
+    #[test]
+    fn test_asset_status_serialization() {
+        let status = AssetStatus::Active;
+        let json = serde_json::to_string(&status).unwrap();
+        assert_eq!(json, "\"active\"");
+    }
+
+    #[test]
+    fn test_list_assets_params_builder() {
+        let params = ListAssetsParams::new()
+            .status(AssetStatus::Active)
+            .asset_class("us_equity")
+            .exchange("NYSE");
+
+        assert_eq!(params.status, Some(AssetStatus::Active));
+        assert_eq!(params.asset_class, Some("us_equity".to_string()));
+        assert_eq!(params.exchange, Some("NYSE".to_string()));
     }
 }
