@@ -8,22 +8,45 @@ use crate::messages::{
     OrderCancelReplaceRequest, OrderCancelRequest, Side,
 };
 use crate::session::{FixSession, SessionState};
+use crate::transport::{self, FixTransport};
 use alpaca_base::Credentials;
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use std::time::Duration;
+use tokio::sync::{Mutex, mpsc};
+use tokio::time::{interval, timeout};
+
+/// Channel buffer size for incoming messages.
+const MESSAGE_CHANNEL_SIZE: usize = 1000;
+
+/// Default timeout for operations in seconds.
+const DEFAULT_TIMEOUT_SECS: u64 = 30;
 
 /// FIX protocol client for Alpaca.
-#[derive(Debug)]
 pub struct FixClient {
     /// Alpaca credentials.
     #[allow(dead_code)]
     credentials: Credentials,
     /// FIX session.
     session: Arc<Mutex<FixSession>>,
+    /// TCP transport.
+    transport: Arc<Mutex<Option<FixTransport>>>,
     /// Message decoder.
+    #[allow(dead_code)]
     decoder: FixDecoder,
     /// Configuration.
     config: FixConfig,
+    /// Incoming message receiver.
+    message_rx: Arc<Mutex<Option<mpsc::Receiver<FixMessage>>>>,
+    /// Shutdown signal sender.
+    shutdown_tx: Arc<Mutex<Option<mpsc::Sender<()>>>>,
+}
+
+impl std::fmt::Debug for FixClient {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("FixClient")
+            .field("config", &self.config)
+            .finish()
+    }
 }
 
 impl FixClient {
@@ -34,8 +57,11 @@ impl FixClient {
         Self {
             credentials,
             session: Arc::new(Mutex::new(session)),
+            transport: Arc::new(Mutex::new(None)),
             decoder: FixDecoder::new(),
             config,
+            message_rx: Arc::new(Mutex::new(None)),
+            shutdown_tx: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -44,27 +70,72 @@ impl FixClient {
         self.session.lock().await.state()
     }
 
-    /// Connect to the FIX server.
+    /// Connect to the FIX server and establish a session.
     ///
     /// # Errors
-    /// Returns error if connection fails.
+    /// Returns error if connection or logon fails.
     pub async fn connect(&self) -> Result<()> {
         let mut session = self.session.lock().await;
         session.set_state(SessionState::Connecting);
 
-        // TODO: Implement actual TCP connection
-        // For now, this is a placeholder for the connection logic
-        tracing::info!("Connecting to {}:{}", self.config.host, self.config.port);
+        // Establish TCP connection
+        tracing::info!(
+            "Connecting to FIX server at {}:{}",
+            self.config.host,
+            self.config.port
+        );
+
+        let tcp_transport = transport::connect(&self.config.host, self.config.port).await?;
+
+        // Store transport
+        {
+            let mut transport_guard = self.transport.lock().await;
+            *transport_guard = Some(tcp_transport);
+        }
 
         session.set_state(SessionState::LoggingOn);
 
-        // Create and send logon message
-        let _logon = session.create_logon();
-        // TODO: Send logon message over TCP
+        // Send logon message
+        let logon = session.create_logon();
+        self.send_raw(&logon).await?;
 
-        session.set_state(SessionState::Active);
+        // Wait for logon response
+        let logon_response = self
+            .receive_with_timeout(Duration::from_secs(DEFAULT_TIMEOUT_SECS))
+            .await?;
+
+        // Validate logon response
+        if let Some(msg_type) = logon_response.msg_type() {
+            match MsgType::from_fix_str(msg_type) {
+                Some(MsgType::Logon) => {
+                    tracing::info!("Logon successful");
+                    session.set_state(SessionState::Active);
+                }
+                Some(MsgType::Logout) => {
+                    let text = logon_response.get(tags::TEXT).unwrap_or("unknown reason");
+                    session.set_state(SessionState::Disconnected);
+                    return Err(FixError::Authentication(format!(
+                        "logon rejected: {}",
+                        text
+                    )));
+                }
+                _ => {
+                    return Err(FixError::Session(format!(
+                        "unexpected response to logon: {:?}",
+                        msg_type
+                    )));
+                }
+            }
+        } else {
+            return Err(FixError::InvalidMessage(
+                "missing MsgType in response".to_string(),
+            ));
+        }
+
+        // Start background tasks
+        self.start_background_tasks().await;
+
         tracing::info!("FIX session established");
-
         Ok(())
     }
 
@@ -73,11 +144,35 @@ impl FixClient {
     /// # Errors
     /// Returns error if disconnect fails.
     pub async fn disconnect(&self) -> Result<()> {
-        let mut session = self.session.lock().await;
-        session.set_state(SessionState::LoggingOut);
+        // Send shutdown signal to background tasks
+        if let Some(tx) = self.shutdown_tx.lock().await.take() {
+            let _ = tx.send(()).await;
+        }
 
-        let _logout = session.create_logout(None);
-        // TODO: Send logout message over TCP
+        let mut session = self.session.lock().await;
+
+        if session.state() == SessionState::Active {
+            session.set_state(SessionState::LoggingOut);
+
+            // Send logout message
+            let logout = session.create_logout(None);
+            if let Err(e) = self.send_raw(&logout).await {
+                tracing::warn!("Failed to send logout: {}", e);
+            }
+
+            // Wait briefly for logout response
+            if let Ok(response) = self.receive_with_timeout(Duration::from_secs(5)).await
+                && let Some(msg_type) = response.msg_type()
+                && MsgType::from_fix_str(msg_type) == Some(MsgType::Logout)
+            {
+                tracing::info!("Logout confirmed by server");
+            }
+        }
+
+        // Close transport
+        if let Some(transport) = self.transport.lock().await.take() {
+            let _ = transport.close().await;
+        }
 
         session.set_state(SessionState::Disconnected);
         tracing::info!("FIX session terminated");
@@ -100,10 +195,12 @@ impl FixClient {
         }
 
         let fields = self.build_new_order_fields(order);
-        let _msg = session.encode_message(MsgType::NewOrderSingle.as_str(), &fields);
+        let msg = session.encode_message(MsgType::NewOrderSingle.as_str(), &fields);
+        drop(session);
 
-        // TODO: Send message over TCP and wait for acknowledgment
+        self.send_raw(&msg).await?;
 
+        tracing::debug!("Sent new order: cl_ord_id={}", order.cl_ord_id);
         Ok(order.cl_ord_id.clone())
     }
 
@@ -128,10 +225,12 @@ impl FixClient {
             (tags::SIDE, cancel.side.as_char().to_string()),
         ];
 
-        let _msg = session.encode_message(MsgType::OrderCancelRequest.as_str(), &fields);
+        let msg = session.encode_message(MsgType::OrderCancelRequest.as_str(), &fields);
+        drop(session);
 
-        // TODO: Send message over TCP
+        self.send_raw(&msg).await?;
 
+        tracing::debug!("Sent cancel request: cl_ord_id={}", cancel.cl_ord_id);
         Ok(cancel.cl_ord_id.clone())
     }
 
@@ -162,10 +261,12 @@ impl FixClient {
             fields.push((tags::PRICE, price.to_string()));
         }
 
-        let _msg = session.encode_message(MsgType::OrderCancelReplaceRequest.as_str(), &fields);
+        let msg = session.encode_message(MsgType::OrderCancelReplaceRequest.as_str(), &fields);
+        drop(session);
 
-        // TODO: Send message over TCP
+        self.send_raw(&msg).await?;
 
+        tracing::debug!("Sent replace request: cl_ord_id={}", replace.cl_ord_id);
         Ok(replace.cl_ord_id.clone())
     }
 
@@ -192,25 +293,40 @@ impl FixClient {
             (tags::MARKET_DEPTH, request.market_depth.to_string()),
         ];
 
-        let _msg = session.encode_message(MsgType::MarketDataRequest.as_str(), &fields);
+        let msg = session.encode_message(MsgType::MarketDataRequest.as_str(), &fields);
+        drop(session);
 
-        // TODO: Send message over TCP
+        self.send_raw(&msg).await?;
 
+        tracing::debug!("Sent market data request: md_req_id={}", request.md_req_id);
         Ok(request.md_req_id.clone())
+    }
+
+    /// Receive the next message from the server.
+    ///
+    /// # Errors
+    /// Returns error if no message is available or channel is closed.
+    pub async fn next_message(&self) -> Result<FixMessage> {
+        let mut rx_guard = self.message_rx.lock().await;
+        if let Some(ref mut rx) = *rx_guard {
+            rx.recv()
+                .await
+                .ok_or_else(|| FixError::Connection("message channel closed".to_string()))
+        } else {
+            Err(FixError::Session("not connected".to_string()))
+        }
     }
 
     /// Process an incoming message.
     ///
     /// # Arguments
-    /// * `data` - Raw FIX message data
+    /// * `msg` - FIX message
     ///
     /// # Errors
     /// Returns error if message processing fails.
-    pub async fn process_message(&self, data: &str) -> Result<FixMessage> {
-        let msg = self.decoder.decode(data)?;
-
+    pub async fn process_message(&self, msg: &FixMessage) -> Result<()> {
         let mut session = self.session.lock().await;
-        session.validate_sequence(&msg)?;
+        session.validate_sequence(msg)?;
 
         // Handle session-level messages
         if let Some(msg_type) = msg.msg_type() {
@@ -220,23 +336,33 @@ impl FixClient {
                 }
                 Some(MsgType::TestRequest) => {
                     if let Some(test_req_id) = msg.get(tags::TEST_REQ_ID) {
-                        let _heartbeat = session.create_heartbeat(Some(test_req_id));
-                        // TODO: Send heartbeat response
+                        let heartbeat = session.create_heartbeat(Some(test_req_id));
+                        drop(session);
+                        self.send_raw(&heartbeat).await?;
+                        tracing::debug!("Sent heartbeat response");
                     }
                 }
                 Some(MsgType::Logout) => {
                     session.set_state(SessionState::Disconnected);
-                    tracing::info!("Received logout");
+                    tracing::info!("Received logout from server");
                 }
                 Some(MsgType::ResendRequest) => {
-                    // TODO: Handle resend request
-                    tracing::warn!("Resend request not implemented");
+                    tracing::warn!("Resend request received - not fully implemented");
+                    // TODO: Implement message resend
+                }
+                Some(MsgType::SequenceReset) => {
+                    if let Some(new_seq) = msg.get(tags::MSG_SEQ_NUM)
+                        && let Ok(seq) = new_seq.parse::<u64>()
+                    {
+                        session.seq_nums().set_incoming(seq);
+                        tracing::info!("Sequence reset to {}", seq);
+                    }
                 }
                 _ => {}
             }
         }
 
-        Ok(msg)
+        Ok(())
     }
 
     /// Parse an execution report from a FIX message.
@@ -356,6 +482,163 @@ impl FixClient {
         }
 
         fields
+    }
+
+    /// Send a raw FIX message over the transport.
+    async fn send_raw(&self, message: &str) -> Result<()> {
+        let transport_guard = self.transport.lock().await;
+        if let Some(ref transport) = *transport_guard {
+            transport.send(message).await
+        } else {
+            Err(FixError::Connection("not connected".to_string()))
+        }
+    }
+
+    /// Receive a message with timeout.
+    async fn receive_with_timeout(&self, duration: Duration) -> Result<FixMessage> {
+        let transport_guard = self.transport.lock().await;
+        if transport_guard.is_some() {
+            drop(transport_guard);
+
+            let transport_clone = self.transport.clone();
+            timeout(duration, async move {
+                let guard = transport_clone.lock().await;
+                if let Some(ref t) = *guard {
+                    t.receive().await
+                } else {
+                    Err(FixError::Connection("not connected".to_string()))
+                }
+            })
+            .await
+            .map_err(|_| FixError::Timeout("receive timeout".to_string()))?
+        } else {
+            Err(FixError::Connection("not connected".to_string()))
+        }
+    }
+
+    /// Start background tasks for heartbeat and message receiving.
+    async fn start_background_tasks(&self) {
+        let (msg_tx, msg_rx) = mpsc::channel(MESSAGE_CHANNEL_SIZE);
+        let (shutdown_tx, mut shutdown_rx) = mpsc::channel::<()>(1);
+
+        // Store receivers
+        *self.message_rx.lock().await = Some(msg_rx);
+        *self.shutdown_tx.lock().await = Some(shutdown_tx);
+
+        // Clone references for background tasks
+        let transport = Arc::clone(&self.transport);
+        let session = Arc::clone(&self.session);
+        let heartbeat_interval = self.config.heartbeat_interval_secs;
+
+        // Spawn message receiver task
+        let transport_recv = Arc::clone(&transport);
+        let session_recv = Arc::clone(&session);
+        let msg_tx_clone = msg_tx.clone();
+
+        tokio::spawn(async move {
+            loop {
+                tokio::select! {
+                    _ = shutdown_rx.recv() => {
+                        tracing::debug!("Message receiver shutting down");
+                        break;
+                    }
+                    result = async {
+                        let guard = transport_recv.lock().await;
+                        if guard.is_some() {
+                            drop(guard);
+                            let guard2 = transport_recv.lock().await;
+                            if let Some(ref t) = *guard2 {
+                                t.receive().await
+                            } else {
+                                Err(FixError::Connection("disconnected".to_string()))
+                            }
+                        } else {
+                            // Not connected, wait a bit
+                            tokio::time::sleep(Duration::from_millis(100)).await;
+                            Err(FixError::Connection("not connected".to_string()))
+                        }
+                    } => {
+                        match result {
+                            Ok(msg) => {
+                                // Process session-level messages
+                                if let Some(msg_type) = msg.msg_type() {
+                                    match MsgType::from_fix_str(msg_type) {
+                                        Some(MsgType::TestRequest) => {
+                                            // Respond to test request with heartbeat
+                                            if let Some(test_req_id) = msg.get(tags::TEST_REQ_ID) {
+                                                let session_guard = session_recv.lock().await;
+                                                let heartbeat = session_guard.create_heartbeat(Some(test_req_id));
+                                                drop(session_guard);
+
+                                                let transport_guard = transport_recv.lock().await;
+                                                if let Some(ref t) = *transport_guard {
+                                                    let _ = t.send(&heartbeat).await;
+                                                }
+                                            }
+                                        }
+                                        Some(MsgType::Logout) => {
+                                            let mut session_guard = session_recv.lock().await;
+                                            session_guard.set_state(SessionState::Disconnected);
+                                            tracing::info!("Server initiated logout");
+                                        }
+                                        _ => {}
+                                    }
+                                }
+
+                                // Forward message to channel
+                                if msg_tx_clone.send(msg).await.is_err() {
+                                    tracing::debug!("Message channel closed");
+                                    break;
+                                }
+                            }
+                            Err(FixError::Connection(_)) => {
+                                // Connection lost
+                                let mut session_guard = session_recv.lock().await;
+                                if session_guard.state() == SessionState::Active {
+                                    session_guard.set_state(SessionState::Disconnected);
+                                    tracing::warn!("Connection lost");
+                                }
+                                break;
+                            }
+                            Err(e) => {
+                                tracing::error!("Error receiving message: {}", e);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Spawn heartbeat task
+        let transport_hb = Arc::clone(&transport);
+        let session_hb = Arc::clone(&session);
+
+        tokio::spawn(async move {
+            let mut heartbeat_timer = interval(Duration::from_secs(heartbeat_interval.into()));
+
+            loop {
+                heartbeat_timer.tick().await;
+
+                let session_guard = session_hb.lock().await;
+                if session_guard.state() != SessionState::Active {
+                    break;
+                }
+
+                let heartbeat = session_guard.create_heartbeat(None);
+                drop(session_guard);
+
+                let transport_guard = transport_hb.lock().await;
+                if let Some(ref t) = *transport_guard {
+                    if let Err(e) = t.send(&heartbeat).await {
+                        tracing::warn!("Failed to send heartbeat: {}", e);
+                        break;
+                    }
+                    tracing::debug!("Sent heartbeat");
+                } else {
+                    break;
+                }
+            }
+        });
     }
 }
 

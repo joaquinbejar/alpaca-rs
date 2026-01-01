@@ -127,7 +127,16 @@ let config = FixConfig::builder()
 
 ## Changelog
 
-### v0.1.0 (latest)
+### v0.2.0 (latest)
+- Full TCP connection implementation
+- Async message sending/receiving
+- Background heartbeat handling
+- Automatic test request responses
+- Session state management
+- Message channel for incoming messages
+- Graceful disconnect with logout
+
+### v0.1.0
 - Initial FIX protocol implementation
 - FIX 4.2 and 4.4 support
 - Order routing messages

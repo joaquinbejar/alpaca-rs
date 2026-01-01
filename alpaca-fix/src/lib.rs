@@ -33,8 +33,10 @@ pub mod config;
 pub mod error;
 pub mod messages;
 pub mod session;
+pub mod transport;
 
 pub use client::FixClient;
 pub use config::{FixConfig, FixVersion};
 pub use error::FixError;
 pub use messages::*;
+pub use transport::FixTransport;
