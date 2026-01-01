@@ -1,3 +1,7 @@
+//! Utility functions and helpers for the Alpaca API.
+
+#![allow(missing_docs)]
+
 use crate::error::{AlpacaError, Result};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

@@ -1,3 +1,7 @@
+//! Stream types for WebSocket data.
+
+#![allow(missing_docs)]
+
 use crate::messages::*;
 use alpaca_base::types::*;
 use futures_util::stream::Stream;

@@ -1,3 +1,7 @@
+//! WebSocket message types for Alpaca streaming.
+
+#![allow(missing_docs)]
+
 use alpaca_base::types::*;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

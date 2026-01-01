@@ -1,3 +1,7 @@
+//! WebSocket client for Alpaca streaming data.
+
+#![allow(missing_docs)]
+
 use crate::{messages::*, streams::*};
 use alpaca_base::{AlpacaError, Result, auth::Credentials, types::Environment};
 use futures_util::{

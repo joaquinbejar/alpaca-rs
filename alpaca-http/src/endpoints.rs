@@ -4,6 +4,8 @@
 //! including account management, order operations, position management,
 //! market data, and more.
 
+#![allow(missing_docs)]
+
 use crate::client::AlpacaHttpClient;
 use alpaca_base::{Result, types::*};
 use chrono::{DateTime, NaiveDate, Utc};

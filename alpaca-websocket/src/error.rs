@@ -1,3 +1,7 @@
+//! WebSocket-specific error types.
+
+#![allow(missing_docs)]
+
 use alpaca_base::AlpacaError;
 use thiserror::Error;
 

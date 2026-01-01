@@ -7,10 +7,12 @@ use std::collections::HashMap;
 
 type HmacSha256 = Hmac<Sha256>;
 
-/// Authentication credentials for Alpaca API
+/// Authentication credentials for Alpaca API.
 #[derive(Debug, Clone)]
 pub struct Credentials {
+    /// The API key for authentication.
     pub api_key: String,
+    /// The secret key for authentication.
     pub secret_key: String,
 }
 
@@ -84,12 +86,16 @@ impl Credentials {
     }
 }
 
-/// OAuth token for API access
+/// OAuth token for API access.
 #[derive(Debug, Clone)]
 pub struct OAuthToken {
+    /// The access token string.
     pub access_token: String,
+    /// The token type (e.g., "Bearer").
     pub token_type: String,
+    /// Token expiration time in seconds.
     pub expires_in: Option<u64>,
+    /// OAuth scope granted.
     pub scope: Option<String>,
 }
 
