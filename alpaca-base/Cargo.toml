@@ -29,3 +29,4 @@ urlencoding = { workspace = true }
 hmac = { workspace = true }
 sha2 = { workspace = true }
 tokio-tungstenite = { workspace = true }
+dotenv = { workspace = true }

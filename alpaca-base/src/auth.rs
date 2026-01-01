@@ -25,12 +25,17 @@ impl Credentials {
         }
     }
 
-    /// Create credentials from environment variables
+    /// Create credentials from environment variables.
+    ///
+    /// Looks for `ALPACA_API_KEY` and either `ALPACA_API_SECRET` or `ALPACA_SECRET_KEY`.
     pub fn from_env() -> Result<Self> {
         let api_key = std::env::var("ALPACA_API_KEY")
             .map_err(|_| AlpacaError::Config("ALPACA_API_KEY not found".to_string()))?;
-        let secret_key = std::env::var("ALPACA_SECRET_KEY")
-            .map_err(|_| AlpacaError::Config("ALPACA_SECRET_KEY not found".to_string()))?;
+        let secret_key = std::env::var("ALPACA_API_SECRET")
+            .or_else(|_| std::env::var("ALPACA_SECRET_KEY"))
+            .map_err(|_| {
+                AlpacaError::Config("ALPACA_API_SECRET or ALPACA_SECRET_KEY not found".to_string())
+            })?;
 
         Ok(Self::new(api_key, secret_key))
     }

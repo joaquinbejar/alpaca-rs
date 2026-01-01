@@ -7,14 +7,14 @@
 //!
 //! Set the following environment variables:
 //! - `ALPACA_API_KEY`: Your Alpaca API key
-//! - `ALPACA_SECRET_KEY`: Your Alpaca secret key
+//! - `ALPACA_API_SECRET`: Your Alpaca secret key
 //!
 //! ## Usage
 //!
 //! ```bash
 //! export ALPACA_API_KEY="your-api-key"
-//! export ALPACA_SECRET_KEY="your-secret-key"
-//! cargo run --example base_credentials_from_env
+//! export ALPACA_API_SECRET="your-secret-key"
+//! cargo run -p alpaca-base --example base_credentials_from_env
 //! ```
 //!
 //! ## Expected Output
@@ -29,6 +29,7 @@
 use alpaca_base::{Credentials, Environment};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    dotenv::dotenv().ok();
     println!("=== Alpaca Credentials from Environment ===\n");
 
     // Method 1: Load credentials from environment variables
@@ -66,7 +67,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("Failed to load credentials: {}", e);
             println!("\nMake sure you have set:");
             println!("  export ALPACA_API_KEY=\"your-api-key\"");
-            println!("  export ALPACA_SECRET_KEY=\"your-secret-key\"");
+            println!("  export ALPACA_API_SECRET=\"your-secret-key\"");
             return Err(e.into());
         }
     }

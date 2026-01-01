@@ -17,6 +17,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 thiserror = "2.0"
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1.0", features = ["v4", "serde"] }
+dotenv = "0.15"
 
 # HTTP client dependencies
 reqwest = { version = "0.13", features = ["json"] }
