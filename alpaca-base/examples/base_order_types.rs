@@ -44,11 +44,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn demonstrate_order_types() {
     let order_types = [
-        (OrderType::Market, "Execute immediately at best available price"),
+        (
+            OrderType::Market,
+            "Execute immediately at best available price",
+        ),
         (OrderType::Limit, "Execute at specified price or better"),
-        (OrderType::Stop, "Trigger market order when stop price is reached"),
-        (OrderType::StopLimit, "Trigger limit order when stop price is reached"),
-        (OrderType::TrailingStop, "Stop price trails the market price"),
+        (
+            OrderType::Stop,
+            "Trigger market order when stop price is reached",
+        ),
+        (
+            OrderType::StopLimit,
+            "Trigger limit order when stop price is reached",
+        ),
+        (
+            OrderType::TrailingStop,
+            "Stop price trails the market price",
+        ),
     ];
 
     for (order_type, description) in order_types {
@@ -78,12 +90,21 @@ fn demonstrate_order_sides() {
 fn demonstrate_time_in_force() {
     let tif_options = [
         (TimeInForce::Day, "Valid for the trading day only"),
-        (TimeInForce::Gtc, "Good 'til canceled - remains active until filled or canceled"),
+        (
+            TimeInForce::Gtc,
+            "Good 'til canceled - remains active until filled or canceled",
+        ),
         (TimeInForce::Opg, "Opening - execute at market open"),
         (TimeInForce::Cls, "Closing - execute at market close"),
-        (TimeInForce::Ioc, "Immediate or cancel - fill immediately or cancel"),
+        (
+            TimeInForce::Ioc,
+            "Immediate or cancel - fill immediately or cancel",
+        ),
         (TimeInForce::Fok, "Fill or kill - fill entirely or cancel"),
-        (TimeInForce::Gtd, "Good 'til date - remains active until specified date"),
+        (
+            TimeInForce::Gtd,
+            "Good 'til date - remains active until specified date",
+        ),
     ];
 
     for (tif, description) in tif_options {
@@ -98,9 +119,18 @@ fn demonstrate_time_in_force() {
 fn demonstrate_order_classes() {
     let order_classes = [
         (OrderClass::Simple, "Standard single order"),
-        (OrderClass::Bracket, "Entry order with take-profit and stop-loss"),
-        (OrderClass::Oco, "One-Cancels-Other - two orders, one cancels the other"),
-        (OrderClass::Oto, "One-Triggers-Other - primary order triggers secondary"),
+        (
+            OrderClass::Bracket,
+            "Entry order with take-profit and stop-loss",
+        ),
+        (
+            OrderClass::Oco,
+            "One-Cancels-Other - two orders, one cancels the other",
+        ),
+        (
+            OrderClass::Oto,
+            "One-Triggers-Other - primary order triggers secondary",
+        ),
     ];
 
     for (order_class, description) in order_classes {

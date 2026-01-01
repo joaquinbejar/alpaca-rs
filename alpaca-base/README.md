@@ -108,7 +108,7 @@ let credentials = AlpacaCredentials::new(
 
 ## Examples
 
-Run examples with `cargo run --example <name>`:
+Run examples with `cargo run -p alpaca-base --example <name>`:
 
 | Example | Description |
 |---------|-------------|
@@ -120,10 +120,10 @@ Run examples with `cargo run --example <name>`:
 
 ```bash
 # Example: Load credentials
-cargo run --example base_credentials_from_env
+cargo run -p alpaca-base --example base_credentials_from_env
 
 # Example: Error handling patterns
-cargo run --example base_error_handling
+cargo run -p alpaca-base --example base_error_handling
 ```
 
 ## Changelog

@@ -49,13 +49,13 @@ fn demonstrate_asset_classes() {
         (AssetClass::Crypto, "Cryptocurrencies"),
     ];
 
-    for (class, description) in classes {
+    for (class, description) in &classes {
         println!("  {:?}: {}", class, description);
     }
 
     // Serialization
     println!("\n  JSON serialization:");
-    for (class, _) in classes {
+    for (class, _) in &classes {
         if let Ok(json) = serde_json::to_string(&class) {
             println!("    {:?} -> {}", class, json);
         }
@@ -149,8 +149,8 @@ fn demonstrate_filtering_patterns() -> Result<(), Box<dyn std::error::Error>> {
     let sample_assets = vec![
         create_sample_asset("AAPL", true, true),
         create_sample_asset("MSFT", true, true),
-        create_sample_asset("PENNY", true, false),  // Not shortable
-        create_sample_asset("OLD", false, false),   // Not tradable
+        create_sample_asset("PENNY", true, false), // Not shortable
+        create_sample_asset("OLD", false, false),  // Not tradable
     ];
 
     // Filter for tradable and shortable assets
@@ -158,16 +158,17 @@ fn demonstrate_filtering_patterns() -> Result<(), Box<dyn std::error::Error>> {
         .iter()
         .filter(|a| a.tradable && a.shortable)
         .collect();
-    println!("     Tradable & shortable: {:?}", 
-        shortable.iter().map(|a| &a.symbol).collect::<Vec<_>>());
+    println!(
+        "     Tradable & shortable: {:?}",
+        shortable.iter().map(|a| &a.symbol).collect::<Vec<_>>()
+    );
 
     // Filter for fractionable assets
-    let fractionable: Vec<_> = sample_assets
-        .iter()
-        .filter(|a| a.fractionable)
-        .collect();
-    println!("     Fractionable: {:?}",
-        fractionable.iter().map(|a| &a.symbol).collect::<Vec<_>>());
+    let fractionable: Vec<_> = sample_assets.iter().filter(|a| a.fractionable).collect();
+    println!(
+        "     Fractionable: {:?}",
+        fractionable.iter().map(|a| &a.symbol).collect::<Vec<_>>()
+    );
 
     Ok(())
 }
@@ -179,7 +180,11 @@ fn create_sample_asset(symbol: &str, tradable: bool, shortable: bool) -> Asset {
         exchange: "NASDAQ".to_string(),
         symbol: symbol.to_string(),
         name: format!("{} Inc.", symbol),
-        status: if tradable { AssetStatus::Active } else { AssetStatus::Inactive },
+        status: if tradable {
+            AssetStatus::Active
+        } else {
+            AssetStatus::Inactive
+        },
         tradable,
         marginable: tradable,
         shortable,

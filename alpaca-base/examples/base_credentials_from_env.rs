@@ -74,7 +74,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Method 2: Create credentials manually (for demonstration)
     println!("\n--- Manual Credential Creation ---");
     let manual_creds = Credentials::new("demo_key".to_string(), "demo_secret".to_string());
-    println!("Manual credentials created with key: {}", manual_creds.api_key);
+    println!(
+        "Manual credentials created with key: {}",
+        manual_creds.api_key
+    );
 
     // Demonstrate Environment enum
     println!("\n--- Trading Environments ---");

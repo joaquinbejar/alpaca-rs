@@ -13,9 +13,7 @@
 //!
 //! Demonstrates various error types and their properties.
 
-use alpaca_base::{
-    AlpacaError, ApiErrorCode, ApiErrorResponse, RateLimitInfo, ValidationError,
-};
+use alpaca_base::{AlpacaError, ApiErrorCode, ApiErrorResponse, RateLimitInfo, ValidationError};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Alpaca Error Handling Patterns ===\n");
@@ -71,8 +69,14 @@ fn demonstrate_error_codes() {
 fn demonstrate_retryable_errors() {
     let errors = [
         ("Rate Limit", AlpacaError::rate_limit(60)),
-        ("Network", AlpacaError::Network("connection reset".to_string())),
-        ("Timeout", AlpacaError::Timeout("request timed out".to_string())),
+        (
+            "Network",
+            AlpacaError::Network("connection reset".to_string()),
+        ),
+        (
+            "Timeout",
+            AlpacaError::Timeout("request timed out".to_string()),
+        ),
         ("Auth", AlpacaError::Auth("invalid key".to_string())),
         ("Not Found", AlpacaError::api(404, "order not found")),
         ("Server Error", AlpacaError::api(500, "internal error")),
@@ -149,7 +153,9 @@ fn demonstrate_error_matching() {
             println!("    - Error code: {:?}", error_code);
             println!("    - Request ID: {:?}", request_id);
         }
-        AlpacaError::RateLimit { retry_after_secs, .. } => {
+        AlpacaError::RateLimit {
+            retry_after_secs, ..
+        } => {
             println!("  Rate limited, retry after {} seconds", retry_after_secs);
         }
         _ => {
@@ -164,8 +170,8 @@ fn demonstrate_error_matching() {
     println!("    - is_retryable(): {}", error.is_retryable());
 
     // API error response parsing
-    let response = ApiErrorResponse::new(40410000, "resource not found")
-        .with_request_id("req-67890");
+    let response =
+        ApiErrorResponse::new(40410000, "resource not found").with_request_id("req-67890");
     println!("\n  Parsed API response:");
     println!("    - Code: {}", response.code);
     println!("    - Message: {}", response.message);

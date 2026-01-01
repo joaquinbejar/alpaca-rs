@@ -121,13 +121,13 @@ fn demonstrate_data_feeds() {
         (DataFeed::Sip, "SIP - consolidated feed, real-time (paid)"),
     ];
 
-    for (feed, description) in feeds {
+    for (feed, description) in &feeds {
         println!("  {:?}: {}", feed, description);
     }
 
     // Serialize feeds
     println!("\n  JSON serialization:");
-    for (feed, _) in feeds {
+    for (feed, _) in &feeds {
         if let Ok(json) = serde_json::to_string(&feed) {
             println!("    {:?} -> {}", feed, json);
         }
