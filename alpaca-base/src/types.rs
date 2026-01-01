@@ -2842,6 +2842,185 @@ impl CryptoBarsParams {
     }
 }
 
+// ============================================================================
+// News API Types
+// ============================================================================
+
+/// News content type.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum NewsContentType {
+    /// Article.
+    Article,
+    /// Video.
+    Video,
+    /// Audio.
+    Audio,
+}
+
+/// News image size.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum NewsImageSize {
+    /// Thumbnail size.
+    Thumb,
+    /// Small size.
+    Small,
+    /// Large size.
+    Large,
+}
+
+/// News image.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct NewsImage {
+    /// Image size.
+    pub size: NewsImageSize,
+    /// Image URL.
+    pub url: String,
+}
+
+/// News source.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct NewsSource {
+    /// Source name.
+    pub name: String,
+    /// Source URL.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+    /// Favicon URL.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub favicon_url: Option<String>,
+}
+
+/// Enhanced news article with images and additional fields.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct EnhancedNewsArticle {
+    /// Article ID.
+    pub id: u64,
+    /// Headline.
+    pub headline: String,
+    /// Author.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub author: Option<String>,
+    /// Created at timestamp.
+    pub created_at: DateTime<Utc>,
+    /// Updated at timestamp.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub updated_at: Option<DateTime<Utc>>,
+    /// Summary.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub summary: Option<String>,
+    /// Full content.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub content: Option<String>,
+    /// Article URL.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+    /// Images.
+    #[serde(default)]
+    pub images: Vec<NewsImage>,
+    /// Related symbols.
+    #[serde(default)]
+    pub symbols: Vec<String>,
+    /// Source.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
+}
+
+/// Parameters for news request.
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct NewsParams {
+    /// Filter by symbols (comma-separated).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub symbols: Option<String>,
+    /// Start time (RFC3339).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub start: Option<String>,
+    /// End time (RFC3339).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub end: Option<String>,
+    /// Sort order (asc or desc).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sort: Option<String>,
+    /// Include content in response.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub include_content: Option<bool>,
+    /// Exclude articles without content.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub exclude_contentless: Option<bool>,
+    /// Maximum number of articles.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub limit: Option<u32>,
+    /// Page token for pagination.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub page_token: Option<String>,
+}
+
+impl NewsParams {
+    /// Create new empty parameters.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Filter by symbols.
+    #[must_use]
+    pub fn symbols(mut self, symbols: &str) -> Self {
+        self.symbols = Some(symbols.to_string());
+        self
+    }
+
+    /// Set time range.
+    #[must_use]
+    pub fn time_range(mut self, start: &str, end: &str) -> Self {
+        self.start = Some(start.to_string());
+        self.end = Some(end.to_string());
+        self
+    }
+
+    /// Sort descending (newest first).
+    #[must_use]
+    pub fn sort_desc(mut self) -> Self {
+        self.sort = Some("desc".to_string());
+        self
+    }
+
+    /// Sort ascending (oldest first).
+    #[must_use]
+    pub fn sort_asc(mut self) -> Self {
+        self.sort = Some("asc".to_string());
+        self
+    }
+
+    /// Include full content.
+    #[must_use]
+    pub fn with_content(mut self) -> Self {
+        self.include_content = Some(true);
+        self
+    }
+
+    /// Exclude articles without content.
+    #[must_use]
+    pub fn exclude_empty(mut self) -> Self {
+        self.exclude_contentless = Some(true);
+        self
+    }
+
+    /// Set limit.
+    #[must_use]
+    pub fn limit(mut self, limit: u32) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+
+    /// Set page token.
+    #[must_use]
+    pub fn page_token(mut self, token: &str) -> Self {
+        self.page_token = Some(token.to_string());
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -3204,5 +3383,26 @@ mod tests {
         assert_eq!(params.symbols, Some("BTC/USD,ETH/USD".to_string()));
         assert_eq!(params.timeframe, Some("1Hour".to_string()));
         assert_eq!(params.limit, Some(100));
+    }
+
+    #[test]
+    fn test_news_content_type_serialization() {
+        let content_type = NewsContentType::Article;
+        let json = serde_json::to_string(&content_type).unwrap();
+        assert_eq!(json, "\"article\"");
+    }
+
+    #[test]
+    fn test_news_params_builder() {
+        let params = NewsParams::new()
+            .symbols("AAPL,MSFT")
+            .sort_desc()
+            .with_content()
+            .limit(50);
+
+        assert_eq!(params.symbols, Some("AAPL,MSFT".to_string()));
+        assert_eq!(params.sort, Some("desc".to_string()));
+        assert_eq!(params.include_content, Some(true));
+        assert_eq!(params.limit, Some(50));
     }
 }

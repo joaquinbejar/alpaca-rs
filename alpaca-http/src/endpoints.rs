@@ -1954,6 +1954,64 @@ impl AlpacaHttpClient {
     }
 }
 
+// ============================================================================
+// News API Endpoints
+// ============================================================================
+
+/// Response for enhanced news request.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct EnhancedNewsResponse {
+    /// News articles.
+    pub news: Vec<EnhancedNewsArticle>,
+    /// Next page token.
+    pub next_page_token: Option<String>,
+}
+
+impl AlpacaHttpClient {
+    /// Get enhanced news articles with images and full content.
+    ///
+    /// # Arguments
+    /// * `params` - Query parameters for filtering news
+    ///
+    /// # Returns
+    /// List of enhanced news articles with pagination
+    pub async fn get_enhanced_news(
+        &self,
+        params: &alpaca_base::NewsParams,
+    ) -> Result<EnhancedNewsResponse> {
+        self.get_with_params("/v1beta1/news", params).await
+    }
+
+    /// Get enhanced news for specific symbols.
+    ///
+    /// # Arguments
+    /// * `symbols` - Comma-separated list of symbols
+    /// * `limit` - Maximum number of articles
+    ///
+    /// # Returns
+    /// List of enhanced news articles
+    pub async fn get_enhanced_news_for_symbols(
+        &self,
+        symbols: &str,
+        limit: u32,
+    ) -> Result<EnhancedNewsResponse> {
+        let params = alpaca_base::NewsParams::new().symbols(symbols).limit(limit);
+        self.get_enhanced_news(&params).await
+    }
+
+    /// Get latest enhanced news.
+    ///
+    /// # Arguments
+    /// * `limit` - Maximum number of articles
+    ///
+    /// # Returns
+    /// List of latest enhanced news articles
+    pub async fn get_latest_enhanced_news(&self, limit: u32) -> Result<EnhancedNewsResponse> {
+        let params = alpaca_base::NewsParams::new().sort_desc().limit(limit);
+        self.get_enhanced_news(&params).await
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
