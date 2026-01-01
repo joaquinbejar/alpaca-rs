@@ -2431,6 +2431,68 @@ impl AlpacaHttpClient {
     }
 }
 
+// ============================================================================
+// IRA Account Endpoints
+// ============================================================================
+
+impl AlpacaHttpClient {
+    /// List IRA contributions.
+    ///
+    /// # Arguments
+    /// * `account_id` - Account ID
+    ///
+    /// # Returns
+    /// List of IRA contributions
+    pub async fn list_ira_contributions(&self, account_id: &str) -> Result<Vec<IraContribution>> {
+        self.get(&format!("/v1/accounts/{}/ira/contributions", account_id))
+            .await
+    }
+
+    /// Create IRA contribution.
+    ///
+    /// # Arguments
+    /// * `account_id` - Account ID
+    /// * `request` - Contribution request
+    ///
+    /// # Returns
+    /// Created contribution
+    pub async fn create_ira_contribution(
+        &self,
+        account_id: &str,
+        request: &CreateIraContributionRequest,
+    ) -> Result<IraContribution> {
+        self.post(
+            &format!("/v1/accounts/{}/ira/contributions", account_id),
+            request,
+        )
+        .await
+    }
+
+    /// List IRA distributions.
+    ///
+    /// # Arguments
+    /// * `account_id` - Account ID
+    ///
+    /// # Returns
+    /// List of IRA distributions
+    pub async fn list_ira_distributions(&self, account_id: &str) -> Result<Vec<IraDistribution>> {
+        self.get(&format!("/v1/accounts/{}/ira/distributions", account_id))
+            .await
+    }
+
+    /// List IRA beneficiaries.
+    ///
+    /// # Arguments
+    /// * `account_id` - Account ID
+    ///
+    /// # Returns
+    /// List of IRA beneficiaries
+    pub async fn list_ira_beneficiaries(&self, account_id: &str) -> Result<Vec<IraBeneficiary>> {
+        self.get(&format!("/v1/accounts/{}/ira/beneficiaries", account_id))
+            .await
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

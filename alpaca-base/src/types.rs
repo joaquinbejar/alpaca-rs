@@ -5323,6 +5323,141 @@ pub struct LctPosition {
     pub currency: Currency,
 }
 
+// ============================================================================
+// IRA Account Types
+// ============================================================================
+
+/// IRA account type.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum IraAccountType {
+    /// Traditional IRA.
+    Traditional,
+    /// Roth IRA.
+    Roth,
+    /// SEP IRA (Simplified Employee Pension).
+    Sep,
+    /// SIMPLE IRA (Savings Incentive Match Plan for Employees).
+    Simple,
+}
+
+impl std::fmt::Display for IraAccountType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Traditional => write!(f, "Traditional"),
+            Self::Roth => write!(f, "Roth"),
+            Self::Sep => write!(f, "SEP"),
+            Self::Simple => write!(f, "SIMPLE"),
+        }
+    }
+}
+
+/// IRA contribution.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct IraContribution {
+    /// Contribution ID.
+    pub id: String,
+    /// Account ID.
+    pub account_id: String,
+    /// Contribution amount.
+    pub amount: String,
+    /// Tax year.
+    pub tax_year: u16,
+    /// Contribution date.
+    pub date: String,
+    /// Contribution type (regular, rollover, etc.).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub contribution_type: Option<String>,
+}
+
+/// IRA distribution.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct IraDistribution {
+    /// Distribution ID.
+    pub id: String,
+    /// Account ID.
+    pub account_id: String,
+    /// Distribution amount.
+    pub amount: String,
+    /// Distribution date.
+    pub date: String,
+    /// Distribution reason.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    /// Federal withholding amount.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub federal_withholding: Option<String>,
+    /// State withholding amount.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub state_withholding: Option<String>,
+}
+
+/// IRA beneficiary.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct IraBeneficiary {
+    /// Beneficiary ID.
+    pub id: String,
+    /// Account ID.
+    pub account_id: String,
+    /// Beneficiary name.
+    pub name: String,
+    /// Beneficiary type (primary, contingent).
+    pub beneficiary_type: String,
+    /// Percentage share.
+    pub percentage: f64,
+    /// Relationship to account holder.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub relationship: Option<String>,
+}
+
+/// IRA contribution request.
+#[derive(Debug, Serialize, Clone)]
+pub struct CreateIraContributionRequest {
+    /// Contribution amount.
+    pub amount: String,
+    /// Tax year.
+    pub tax_year: u16,
+}
+
+impl CreateIraContributionRequest {
+    /// Create new contribution request.
+    #[must_use]
+    pub fn new(amount: &str, tax_year: u16) -> Self {
+        Self {
+            amount: amount.to_string(),
+            tax_year,
+        }
+    }
+}
+
+/// IRA distribution request.
+#[derive(Debug, Serialize, Clone)]
+pub struct CreateIraDistributionRequest {
+    /// Distribution amount.
+    pub amount: String,
+    /// Distribution reason.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+}
+
+impl CreateIraDistributionRequest {
+    /// Create new distribution request.
+    #[must_use]
+    pub fn new(amount: &str) -> Self {
+        Self {
+            amount: amount.to_string(),
+            reason: None,
+        }
+    }
+
+    /// Set distribution reason.
+    #[must_use]
+    pub fn reason(mut self, reason: &str) -> Self {
+        self.reason = Some(reason.to_string());
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -5975,5 +6110,20 @@ mod tests {
     fn test_currency_pair() {
         let pair = CurrencyPair::new(Currency::Eur, Currency::Usd);
         assert_eq!(pair.as_string(), "EUR/USD");
+    }
+
+    #[test]
+    fn test_ira_account_type_display() {
+        assert_eq!(IraAccountType::Traditional.to_string(), "Traditional");
+        assert_eq!(IraAccountType::Roth.to_string(), "Roth");
+        assert_eq!(IraAccountType::Sep.to_string(), "SEP");
+        assert_eq!(IraAccountType::Simple.to_string(), "SIMPLE");
+    }
+
+    #[test]
+    fn test_create_ira_contribution_request() {
+        let req = CreateIraContributionRequest::new("5000.00", 2024);
+        assert_eq!(req.amount, "5000.00");
+        assert_eq!(req.tax_year, 2024);
     }
 }
