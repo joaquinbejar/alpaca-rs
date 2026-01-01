@@ -927,6 +927,128 @@ pub struct CryptoTradesResponse {
     pub next_page_token: Option<String>,
 }
 
+// ============================================================================
+// Options Trading Endpoints
+// ============================================================================
+
+/// Response for listing option contracts.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct OptionContractsResponse {
+    /// List of option contracts.
+    pub option_contracts: Vec<OptionContract>,
+    /// Token for next page of results.
+    pub next_page_token: Option<String>,
+}
+
+/// Response for option bars.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct OptionBarsResponse {
+    /// Map of symbol to bars.
+    pub bars: std::collections::HashMap<String, Vec<OptionBar>>,
+    /// Token for next page of results.
+    pub next_page_token: Option<String>,
+}
+
+/// Response for option snapshots.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct OptionSnapshotsResponse {
+    /// Map of symbol to snapshot.
+    pub snapshots: std::collections::HashMap<String, OptionSnapshot>,
+}
+
+impl AlpacaHttpClient {
+    // ========================================================================
+    // Options Contract Endpoints
+    // ========================================================================
+
+    /// List option contracts with optional filters.
+    ///
+    /// # Arguments
+    /// * `params` - Query parameters for filtering contracts
+    ///
+    /// # Returns
+    /// List of option contracts matching the filters
+    pub async fn get_option_contracts(
+        &self,
+        params: &OptionContractParams,
+    ) -> Result<OptionContractsResponse> {
+        self.get_with_params("/v2/options/contracts", params).await
+    }
+
+    /// Get a specific option contract by symbol or ID.
+    ///
+    /// # Arguments
+    /// * `symbol_or_id` - OCC symbol or contract ID
+    ///
+    /// # Returns
+    /// The option contract details
+    pub async fn get_option_contract(&self, symbol_or_id: &str) -> Result<OptionContract> {
+        self.get(&format!("/v2/options/contracts/{}", symbol_or_id))
+            .await
+    }
+
+    /// Exercise an option contract.
+    ///
+    /// # Arguments
+    /// * `request` - Exercise request with symbol and quantity
+    ///
+    /// # Returns
+    /// The resulting order from exercising the option
+    pub async fn exercise_option(&self, request: &OptionExerciseRequest) -> Result<Order> {
+        self.post("/v2/options/exercise", request).await
+    }
+
+    // ========================================================================
+    // Options Market Data Endpoints
+    // ========================================================================
+
+    /// Get historical bars for option contracts.
+    ///
+    /// # Arguments
+    /// * `params` - Query parameters including symbols, timeframe, and date range
+    ///
+    /// # Returns
+    /// Historical bar data for the requested options
+    pub async fn get_option_bars(&self, params: &OptionBarsParams) -> Result<OptionBarsResponse> {
+        self.get_with_params("/v1beta1/options/bars", params).await
+    }
+
+    /// Get snapshots for option contracts.
+    ///
+    /// # Arguments
+    /// * `symbols` - Comma-separated list of option symbols
+    ///
+    /// # Returns
+    /// Current snapshots with latest quote, trade, and greeks
+    pub async fn get_option_snapshots(&self, symbols: &str) -> Result<OptionSnapshotsResponse> {
+        #[derive(Serialize)]
+        struct Params<'a> {
+            symbols: &'a str,
+        }
+        self.get_with_params("/v1beta1/options/snapshots", &Params { symbols })
+            .await
+    }
+
+    /// Get the options chain for an underlying symbol.
+    ///
+    /// # Arguments
+    /// * `underlying_symbol` - The underlying asset symbol (e.g., "AAPL")
+    ///
+    /// # Returns
+    /// Options chain with all available contracts and snapshots
+    pub async fn get_option_chain(
+        &self,
+        underlying_symbol: &str,
+    ) -> Result<OptionSnapshotsResponse> {
+        #[derive(Serialize)]
+        struct Params<'a> {
+            underlying_symbol: &'a str,
+        }
+        self.get_with_params("/v1beta1/options/snapshots", &Params { underlying_symbol })
+            .await
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
