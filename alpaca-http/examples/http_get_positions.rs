@@ -14,13 +14,15 @@
 //! cargo run -p alpaca-http --example http_get_positions
 //! ```
 
+use dotenvy::dotenv;
 use alpaca_base::Environment;
 use alpaca_http::AlpacaHttpClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    dotenv()?;
     println!("=== Get Positions ===\n");
-
+    
     // Create client for Paper trading
     let client = AlpacaHttpClient::from_env(Environment::Paper)?;
     println!("Client created for Paper trading environment");

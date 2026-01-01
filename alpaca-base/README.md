@@ -23,9 +23,10 @@ Add to your `Cargo.toml`:
 alpaca-base = "0.24.0"
 ```
 
-## Usage
-
 While `alpaca-base` is primarily used internally by other crates in the workspace, you can use its types and authentication utilities directly.
+
+> [!TIP]
+> **Automated .env Loading**: `Credentials::from_env()` automatically attempts to load a `.env` file at the start of execution using the `dotenv` crate. You don't need to call `dotenv().ok()` manually in your code.
 
 ```rust
 use alpaca_base::auth::AlpacaCredentials;

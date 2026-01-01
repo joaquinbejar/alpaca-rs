@@ -27,8 +27,11 @@ impl Credentials {
 
     /// Create credentials from environment variables.
     ///
+    /// This method automatically attempts to load a `.env` file if present.
+    ///
     /// Looks for `ALPACA_API_KEY` and either `ALPACA_API_SECRET` or `ALPACA_SECRET_KEY`.
     pub fn from_env() -> Result<Self> {
+        dotenv::dotenv().ok();
         let api_key = std::env::var("ALPACA_API_KEY")
             .map_err(|_| AlpacaError::Config("ALPACA_API_KEY not found".to_string()))?;
         let secret_key = std::env::var("ALPACA_API_SECRET")
