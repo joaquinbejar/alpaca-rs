@@ -4261,6 +4261,188 @@ pub enum RequestPriority {
     Critical = 3,
 }
 
+// ============================================================================
+// Margin and Short Selling Types
+// ============================================================================
+
+/// Margin information for an account.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct MarginInfo {
+    /// Total buying power.
+    pub buying_power: String,
+    /// Regulation T buying power.
+    pub regt_buying_power: String,
+    /// Day trading buying power.
+    pub daytrading_buying_power: String,
+    /// Non-marginable buying power.
+    pub non_marginable_buying_power: String,
+    /// Initial margin requirement.
+    pub initial_margin: String,
+    /// Maintenance margin requirement.
+    pub maintenance_margin: String,
+    /// Last maintenance margin.
+    pub last_maintenance_margin: String,
+    /// Special Memorandum Account.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sma: Option<String>,
+}
+
+/// Short position information.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ShortPosition {
+    /// Symbol.
+    pub symbol: String,
+    /// Quantity (negative for short).
+    pub qty: String,
+    /// Average entry price.
+    pub avg_entry_price: String,
+    /// Current market value.
+    pub market_value: String,
+    /// Cost basis.
+    pub cost_basis: String,
+    /// Unrealized P&L.
+    pub unrealized_pl: String,
+    /// Unrealized P&L percentage.
+    pub unrealized_plpc: String,
+    /// Current price.
+    pub current_price: String,
+}
+
+/// Borrow rate information for short selling.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct BorrowRate {
+    /// Symbol.
+    pub symbol: String,
+    /// Annual borrow rate as percentage.
+    pub rate: f64,
+    /// Available quantity to borrow.
+    pub available_qty: String,
+    /// Whether easy to borrow.
+    pub easy_to_borrow: bool,
+}
+
+/// Margin requirement for a position.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct MarginRequirement {
+    /// Initial margin requirement percentage.
+    pub initial: f64,
+    /// Maintenance margin requirement percentage.
+    pub maintenance: f64,
+}
+
+impl MarginRequirement {
+    /// Create new margin requirement.
+    #[must_use]
+    pub fn new(initial: f64, maintenance: f64) -> Self {
+        Self {
+            initial,
+            maintenance,
+        }
+    }
+
+    /// Standard margin requirement (50% initial, 25% maintenance).
+    #[must_use]
+    pub fn standard() -> Self {
+        Self::new(0.50, 0.25)
+    }
+
+    /// Calculate initial margin for a position value.
+    #[must_use]
+    pub fn calculate_initial_margin(&self, position_value: f64) -> f64 {
+        position_value * self.initial
+    }
+
+    /// Calculate maintenance margin for a position value.
+    #[must_use]
+    pub fn calculate_maintenance_margin(&self, position_value: f64) -> f64 {
+        position_value * self.maintenance
+    }
+}
+
+/// Locate request for short selling.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct LocateRequest {
+    /// Symbol to locate.
+    pub symbol: String,
+    /// Quantity to locate.
+    pub qty: String,
+}
+
+impl LocateRequest {
+    /// Create new locate request.
+    #[must_use]
+    pub fn new(symbol: &str, qty: &str) -> Self {
+        Self {
+            symbol: symbol.to_string(),
+            qty: qty.to_string(),
+        }
+    }
+}
+
+/// Locate response for short selling.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct LocateResponse {
+    /// Symbol.
+    pub symbol: String,
+    /// Quantity available.
+    pub available_qty: String,
+    /// Borrow rate.
+    pub rate: f64,
+    /// Locate ID.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub locate_id: Option<String>,
+}
+
+/// Pattern day trader status.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum PdtStatus {
+    /// Not a pattern day trader.
+    No,
+    /// Is a pattern day trader.
+    Yes,
+    /// PDT flag reset pending.
+    Pending,
+}
+
+/// Buying power calculation helper.
+#[derive(Debug, Clone)]
+pub struct BuyingPowerCalculator {
+    /// Cash balance.
+    pub cash: f64,
+    /// Portfolio value.
+    pub portfolio_value: f64,
+    /// Margin multiplier (1.0 for cash, 2.0 for margin, 4.0 for day trading).
+    pub margin_multiplier: f64,
+}
+
+impl BuyingPowerCalculator {
+    /// Create new calculator.
+    #[must_use]
+    pub fn new(cash: f64, portfolio_value: f64, margin_multiplier: f64) -> Self {
+        Self {
+            cash,
+            portfolio_value,
+            margin_multiplier,
+        }
+    }
+
+    /// Calculate buying power.
+    #[must_use]
+    pub fn buying_power(&self) -> f64 {
+        self.cash * self.margin_multiplier
+    }
+
+    /// Calculate maximum position size for a given price.
+    #[must_use]
+    pub fn max_shares(&self, price: f64) -> u64 {
+        if price <= 0.0 {
+            return 0;
+        }
+        (self.buying_power() / price).floor() as u64
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -4775,5 +4957,26 @@ mod tests {
 
         let limited = RateLimitStatus::new(0, 200, 1704067200);
         assert!(limited.is_rate_limited());
+    }
+
+    #[test]
+    fn test_margin_requirement_calculations() {
+        let req = MarginRequirement::standard();
+        assert!((req.initial - 0.50).abs() < f64::EPSILON);
+        assert!((req.maintenance - 0.25).abs() < f64::EPSILON);
+
+        let initial = req.calculate_initial_margin(10000.0);
+        assert!((initial - 5000.0).abs() < f64::EPSILON);
+
+        let maintenance = req.calculate_maintenance_margin(10000.0);
+        assert!((maintenance - 2500.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_buying_power_calculator() {
+        let calc = BuyingPowerCalculator::new(10000.0, 50000.0, 2.0);
+        assert!((calc.buying_power() - 20000.0).abs() < f64::EPSILON);
+        assert_eq!(calc.max_shares(100.0), 200);
+        assert_eq!(calc.max_shares(0.0), 0);
     }
 }

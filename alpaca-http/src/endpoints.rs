@@ -2367,6 +2367,31 @@ impl AlpacaHttpClient {
     }
 }
 
+// ============================================================================
+// Margin and Short Selling Endpoints
+// ============================================================================
+
+impl AlpacaHttpClient {
+    /// Get locate availability for short selling.
+    ///
+    /// # Returns
+    /// List of available locates
+    pub async fn get_locates(&self) -> Result<Vec<LocateResponse>> {
+        self.get("/v1/locate/stocks").await
+    }
+
+    /// Request a locate for short selling.
+    ///
+    /// # Arguments
+    /// * `request` - Locate request
+    ///
+    /// # Returns
+    /// Locate response
+    pub async fn request_locate(&self, request: &LocateRequest) -> Result<LocateResponse> {
+        self.post("/v1/locate/stocks", request).await
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
