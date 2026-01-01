@@ -1,53 +1,114 @@
-<div style="text-align: center;">
-<img src="https://raw.githubusercontent.com/joaquinbejar/alpaca-rs/refs/heads/main/doc/images/logo.png" alt="alpaca-rs" style="width: 80%; height: 80%;">
-</div>
+# alpaca-rs
 
-[![Dual License](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
-[![Crates.io](https://img.shields.io/crates/v/alpaca-rs.svg)](https://crates.io/crates/alpaca-rs)
-[![Downloads](https://img.shields.io/crates/d/alpaca-rs.svg)](https://crates.io/crates/alpaca-rs)
-[![Stars](https://img.shields.io/github/stars/joaquinbejar/alpaca-rs.svg)](https://github.com/joaquinbejar/alpaca-rs/stargazers)
-[![Issues](https://img.shields.io/github/issues/joaquinbejar/alpaca-rs.svg)](https://github.com/joaquinbejar/alpaca-rs/issues)
-[![PRs](https://img.shields.io/github/issues-pr/joaquinbejar/alpaca-rs.svg)](https://github.com/joaquinbejar/alpaca-rs/pulls)
-[![Build Status](https://img.shields.io/github/workflow/status/joaquinbejar/alpaca-rs/CI)](https://github.com/joaquinbejar/alpaca-rs/actions)
-[![Coverage](https://img.shields.io/codecov/c/github/joaquinbejar/alpaca-rs)](https://codecov.io/gh/joaquinbejar/alpaca-rs)
-[![Dependencies](https://img.shields.io/librariesio/github/joaquinbejar/alpaca-rs)](https://libraries.io/github/joaquinbejar/alpaca-rs)
-[![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.rs/alpaca-rs)
-[![Wiki](https://img.shields.io/badge/wiki-latest-blue.svg)](https://deepwiki.com/joaquinbejar/alpaca-rs)
+A comprehensive Rust client library for the [Alpaca Markets](https://alpaca.markets/) trading API.
 
-## Alpaca Markets API Client
+## Overview
 
-This crate provides a Rust client for the Alpaca Markets API.
+This workspace provides a complete Rust implementation for interacting with Alpaca's trading platform, including:
 
-### Example
+- **alpaca-base**: Core types, error handling, and utilities
+- **alpaca-http**: HTTP REST API client for trading and market data
+- **alpaca-websocket**: WebSocket client for real-time streaming data
 
-```rust
-use alpaca_rs::Client;
+## Features
 
-// Basic usage example will be added as the API is implemented
+- Full Trading API support (accounts, orders, positions, watchlists)
+- Market Data API (stocks, crypto bars, quotes, trades)
+- Advanced order types (bracket, OCO, OTO, trailing stop)
+- Real-time WebSocket streaming
+- Paper and live trading environments
+- Async/await support with Tokio
+
+## Installation
+
+Add the crates you need to your `Cargo.toml`:
+
+```toml
+[dependencies]
+alpaca-base = "0.2"
+alpaca-http = "0.2"
+alpaca-websocket = "0.1"
 ```
 
-## Contribution and Contact
+## Quick Start
 
-We welcome contributions to this project! If you would like to contribute, please follow these steps:
+```rust
+use alpaca_http::{AlpacaHttpClient, CreateOrderRequest};
+use alpaca_base::{Credentials, Environment, OrderSide, TakeProfit, StopLoss, OrderType};
 
-1. Fork the repository.
-2. Create a new branch for your feature or bug fix.
-3. Make your changes and ensure that the project still builds and all tests pass.
-4. Commit your changes and push your branch to your forked repository.
-5. Submit a pull request to the main repository.
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Create credentials and client
+    let credentials = Credentials::new(
+        "your_api_key".to_string(),
+        "your_api_secret".to_string(),
+    );
+    let client = AlpacaHttpClient::new(credentials, Environment::Paper)?;
 
-If you have any questions, issues, or would like to provide feedback, please feel free to contact the project maintainer:
+    // Get account information
+    let account = client.get_account().await?;
+    println!("Buying Power: ${}", account.buying_power);
 
-**Joaquin Bejar Garcia**
-- Email: jb@taunais.com
-- GitHub: [joaquinbejar](https://github.com/joaquinbejar)
+    // Create a simple market order
+    let order = CreateOrderRequest::market("AAPL", OrderSide::Buy, "1");
+    // let result = client.create_order(&order).await?;
 
-We appreciate your interest and look forward to your contributions!
+    // Create a bracket order with take-profit and stop-loss
+    let bracket_order = CreateOrderRequest::bracket(
+        "AAPL",
+        OrderSide::Buy,
+        "10",
+        OrderType::Limit,
+        TakeProfit::new("160.00"),
+        StopLoss::with_limit("140.00", "139.50"),
+    )
+    .with_limit_price("150.00")
+    .client_order_id("my-bracket-order");
+    // let result = client.create_order(&bracket_order).await?;
 
-## ✍️ License
+    Ok(())
+}
+```
 
-Licensed under MIT license
+## Order Types
 
-## Disclaimer
+The library supports all Alpaca order types:
 
-This software is not officially associated with IG Markets. Trading financial instruments carries risk, and this library is provided as-is without any guarantees. Always test thoroughly with a demo account before using in a live trading environment.
+- **Market**: Execute immediately at current market price
+- **Limit**: Execute at specified price or better
+- **Stop**: Trigger market order when stop price is reached
+- **Stop-Limit**: Trigger limit order when stop price is reached
+- **Trailing Stop**: Dynamic stop that follows the market
+
+### Advanced Order Classes
+
+- **Bracket**: Primary order with take-profit and stop-loss legs
+- **OCO (One-Cancels-Other)**: Two orders where filling one cancels the other
+- **OTO (One-Triggers-Other)**: Primary order that triggers a secondary order
+
+## Configuration
+
+Set up your API credentials using environment variables:
+
+```bash
+export ALPACA_API_KEY=your_api_key
+export ALPACA_API_SECRET=your_api_secret
+```
+
+Or use a `.env` file (see `.env.example`).
+
+## Examples
+
+Run the examples with:
+
+```bash
+cargo run --example trading_bracket_order
+```
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+## Contributing
+
+Contributions are welcome! Please see the issues in `.issues/` for planned features.
