@@ -4134,6 +4134,133 @@ impl ClosePositionParams {
     }
 }
 
+// ============================================================================
+// Rate Limiting Types
+// ============================================================================
+
+/// Rate limit configuration.
+#[derive(Debug, Clone)]
+pub struct RateLimitConfig {
+    /// Maximum requests per minute.
+    pub requests_per_minute: u32,
+    /// Burst limit.
+    pub burst_limit: u32,
+    /// Whether to retry on rate limit.
+    pub retry_on_rate_limit: bool,
+    /// Maximum retry attempts.
+    pub max_retries: u32,
+    /// Base delay for exponential backoff in milliseconds.
+    pub base_delay_ms: u64,
+}
+
+impl Default for RateLimitConfig {
+    fn default() -> Self {
+        Self {
+            requests_per_minute: 200,
+            burst_limit: 50,
+            retry_on_rate_limit: true,
+            max_retries: 3,
+            base_delay_ms: 1000,
+        }
+    }
+}
+
+impl RateLimitConfig {
+    /// Create new rate limit configuration.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Set requests per minute.
+    #[must_use]
+    pub fn requests_per_minute(mut self, rpm: u32) -> Self {
+        self.requests_per_minute = rpm;
+        self
+    }
+
+    /// Set burst limit.
+    #[must_use]
+    pub fn burst_limit(mut self, limit: u32) -> Self {
+        self.burst_limit = limit;
+        self
+    }
+
+    /// Enable or disable retry on rate limit.
+    #[must_use]
+    pub fn retry_on_rate_limit(mut self, retry: bool) -> Self {
+        self.retry_on_rate_limit = retry;
+        self
+    }
+
+    /// Set maximum retries.
+    #[must_use]
+    pub fn max_retries(mut self, retries: u32) -> Self {
+        self.max_retries = retries;
+        self
+    }
+
+    /// Set base delay for exponential backoff in milliseconds.
+    #[must_use]
+    pub fn base_delay_ms(mut self, delay: u64) -> Self {
+        self.base_delay_ms = delay;
+        self
+    }
+}
+
+/// Rate limit information from response headers.
+#[derive(Debug, Clone)]
+pub struct RateLimitStatus {
+    /// Remaining requests in current window.
+    pub remaining: u32,
+    /// Total limit for current window.
+    pub limit: u32,
+    /// Reset timestamp in seconds since epoch.
+    pub reset_at: u64,
+}
+
+impl RateLimitStatus {
+    /// Create new rate limit status.
+    #[must_use]
+    pub fn new(remaining: u32, limit: u32, reset_at: u64) -> Self {
+        Self {
+            remaining,
+            limit,
+            reset_at,
+        }
+    }
+
+    /// Check if rate limited.
+    #[must_use]
+    pub fn is_rate_limited(&self) -> bool {
+        self.remaining == 0
+    }
+
+    /// Get seconds until reset.
+    #[must_use]
+    pub fn seconds_until_reset(&self) -> u64 {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        self.reset_at.saturating_sub(now)
+    }
+}
+
+/// Request priority for queue management.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
+pub enum RequestPriority {
+    /// Low priority.
+    Low = 0,
+    /// Normal priority.
+    #[default]
+    Normal = 1,
+    /// High priority.
+    High = 2,
+    /// Critical priority (e.g., order cancellation).
+    Critical = 3,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -4627,5 +4754,26 @@ mod tests {
         assert_eq!(alloc.symbol, "AAPL");
         assert_eq!(alloc.percent, Some(25.0));
         assert!(alloc.notional.is_none());
+    }
+
+    #[test]
+    fn test_rate_limit_config_builder() {
+        let config = RateLimitConfig::new()
+            .requests_per_minute(100)
+            .burst_limit(25)
+            .max_retries(5);
+
+        assert_eq!(config.requests_per_minute, 100);
+        assert_eq!(config.burst_limit, 25);
+        assert_eq!(config.max_retries, 5);
+    }
+
+    #[test]
+    fn test_rate_limit_status() {
+        let status = RateLimitStatus::new(50, 200, 1704067200);
+        assert!(!status.is_rate_limited());
+
+        let limited = RateLimitStatus::new(0, 200, 1704067200);
+        assert!(limited.is_rate_limited());
     }
 }
