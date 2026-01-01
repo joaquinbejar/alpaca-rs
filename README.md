@@ -3,16 +3,13 @@
 </div>
 
 [![License](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
-[![Crates.io](https://img.shields.io/crates/v/alpaca-rs.svg)](https://crates.io/crates/alpaca-rs)
-[![Downloads](https://img.shields.io/crates/d/alpaca-rs.svg)](https://crates.io/crates/alpaca-rs)
 [![Stars](https://img.shields.io/github/stars/joaquinbejar/alpaca-rs.svg)](https://github.com/joaquinbejar/alpaca-rs/stargazers)
 [![Issues](https://img.shields.io/github/issues/joaquinbejar/alpaca-rs.svg)](https://github.com/joaquinbejar/alpaca-rs/issues)
 [![PRs](https://img.shields.io/github/issues-pr/joaquinbejar/alpaca-rs.svg)](https://github.com/joaquinbejar/alpaca-rs/pulls)
 
-[![Build Status](https://github.com/joaquinbejar/alpaca-rs/workflows/CI/badge.svg)](https://github.com/joaquinbejar/alpaca-rs/actions)
+[![Build Status](https://github.com/joaquinbejar/alpaca-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/joaquinbejar/alpaca-rs/actions)
 [![Coverage](https://img.shields.io/codecov/c/github/joaquinbejar/alpaca-rs)](https://codecov.io/gh/joaquinbejar/alpaca-rs)
 [![Dependencies](https://img.shields.io/librariesio/github/joaquinbejar/alpaca-rs)](https://libraries.io/github/joaquinbejar/alpaca-rs)
-[![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.rs/alpaca-rs)
 
 A comprehensive Rust client library for the [Alpaca Markets](https://alpaca.markets/) trading API.
 
@@ -20,12 +17,12 @@ A comprehensive Rust client library for the [Alpaca Markets](https://alpaca.mark
 
 This workspace provides a complete Rust implementation for interacting with Alpaca's trading platform:
 
-| Crate | Description | Version |
-|-------|-------------|---------|
-| `alpaca-base` | Core types, error handling, and utilities | 0.24.0 |
-| `alpaca-http` | HTTP REST API client for trading and market data | 0.20.0 |
-| `alpaca-websocket` | WebSocket client for real-time streaming data | 0.2.0 |
-| `alpaca-fix` | FIX protocol client for high-frequency trading | 0.2.0 |
+| Crate | Description | Version | Documentation |
+|-------|-------------|---------|---------------|
+| [`alpaca-base`](/alpaca-base) | Core types, error handling, and utilities | 0.24.0 | [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.rs/alpaca-base) |
+| [`alpaca-http`](/alpaca-http) | HTTP REST API client for trading and market data | 0.20.0 | [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.rs/alpaca-http) |
+| [`alpaca-websocket`](/alpaca-websocket) | WebSocket client for real-time streaming data | 0.2.0 | [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.rs/alpaca-websocket) |
+| [`alpaca-fix`](/alpaca-fix) | FIX protocol client for high-frequency trading | 0.2.0 | [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.rs/alpaca-fix) |
 
 ## Features
 
@@ -110,7 +107,11 @@ If you have any questions, issues, or would like to provide feedback, please fee
 - **Email**: jb@taunais.com
 - **Telegram**: [@joaquin_bejar](https://t.me/joaquin_bejar)
 - **Repository**: <https://github.com/joaquinbejar/alpaca-rs>
-- **Documentation**: <https://docs.rs/alpaca-rs>
+- **Documentation**:
+  - [`alpaca-base`](https://docs.rs/alpaca-base)
+  - [`alpaca-http`](https://docs.rs/alpaca-http)
+  - [`alpaca-websocket`](https://docs.rs/alpaca-websocket)
+  - [`alpaca-fix`](https://docs.rs/alpaca-fix)
 
 We appreciate your interest and look forward to your contributions!
 
