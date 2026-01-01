@@ -4902,6 +4902,184 @@ impl TradingDay {
     }
 }
 
+// ============================================================================
+// FIX Protocol Types
+// ============================================================================
+
+/// FIX protocol version.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Default)]
+pub enum FixVersion {
+    /// FIX 4.2.
+    #[serde(rename = "FIX.4.2")]
+    #[default]
+    Fix42,
+    /// FIX 4.4.
+    #[serde(rename = "FIX.4.4")]
+    Fix44,
+}
+
+
+impl std::fmt::Display for FixVersion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Fix42 => write!(f, "FIX.4.2"),
+            Self::Fix44 => write!(f, "FIX.4.4"),
+        }
+    }
+}
+
+/// FIX session configuration.
+#[derive(Debug, Clone)]
+pub struct FixSessionConfig {
+    /// FIX protocol version.
+    pub version: FixVersion,
+    /// Sender CompID.
+    pub sender_comp_id: String,
+    /// Target CompID.
+    pub target_comp_id: String,
+    /// Host address.
+    pub host: String,
+    /// Port number.
+    pub port: u16,
+    /// Heartbeat interval in seconds.
+    pub heartbeat_interval: u32,
+    /// Enable message logging.
+    pub enable_logging: bool,
+}
+
+impl FixSessionConfig {
+    /// Create new FIX session config.
+    #[must_use]
+    pub fn new(sender_comp_id: &str, target_comp_id: &str, host: &str, port: u16) -> Self {
+        Self {
+            version: FixVersion::default(),
+            sender_comp_id: sender_comp_id.to_string(),
+            target_comp_id: target_comp_id.to_string(),
+            host: host.to_string(),
+            port,
+            heartbeat_interval: 30,
+            enable_logging: true,
+        }
+    }
+
+    /// Set FIX version.
+    #[must_use]
+    pub fn version(mut self, version: FixVersion) -> Self {
+        self.version = version;
+        self
+    }
+
+    /// Set heartbeat interval in seconds.
+    #[must_use]
+    pub fn heartbeat_interval(mut self, seconds: u32) -> Self {
+        self.heartbeat_interval = seconds;
+        self
+    }
+
+    /// Enable or disable logging.
+    #[must_use]
+    pub fn enable_logging(mut self, enable: bool) -> Self {
+        self.enable_logging = enable;
+        self
+    }
+}
+
+/// FIX message type.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FixMsgType {
+    /// Heartbeat (0).
+    Heartbeat,
+    /// Logon (A).
+    Logon,
+    /// Logout (5).
+    Logout,
+    /// New Order Single (D).
+    NewOrderSingle,
+    /// Order Cancel Request (F).
+    OrderCancelRequest,
+    /// Order Cancel/Replace Request (G).
+    OrderCancelReplaceRequest,
+    /// Execution Report (8).
+    ExecutionReport,
+    /// Order Cancel Reject (9).
+    OrderCancelReject,
+    /// Market Data Request (V).
+    MarketDataRequest,
+    /// Market Data Snapshot (W).
+    MarketDataSnapshot,
+}
+
+impl FixMsgType {
+    /// Get the FIX message type tag value.
+    #[must_use]
+    pub fn tag_value(&self) -> &'static str {
+        match self {
+            Self::Heartbeat => "0",
+            Self::Logon => "A",
+            Self::Logout => "5",
+            Self::NewOrderSingle => "D",
+            Self::OrderCancelRequest => "F",
+            Self::OrderCancelReplaceRequest => "G",
+            Self::ExecutionReport => "8",
+            Self::OrderCancelReject => "9",
+            Self::MarketDataRequest => "V",
+            Self::MarketDataSnapshot => "W",
+        }
+    }
+}
+
+/// FIX session state.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Default)]
+pub enum FixSessionState {
+    /// Disconnected.
+    #[default]
+    Disconnected,
+    /// Connecting.
+    Connecting,
+    /// Logged on.
+    LoggedOn,
+    /// Logging out.
+    LoggingOut,
+}
+
+
+/// FIX sequence numbers.
+#[derive(Debug, Clone, Default)]
+pub struct FixSequenceNumbers {
+    /// Outgoing message sequence number.
+    pub outgoing: u64,
+    /// Incoming message sequence number.
+    pub incoming: u64,
+}
+
+impl FixSequenceNumbers {
+    /// Create new sequence numbers.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Increment outgoing sequence number.
+    pub fn next_outgoing(&mut self) -> u64 {
+        self.outgoing += 1;
+        self.outgoing
+    }
+
+    /// Increment incoming sequence number.
+    pub fn next_incoming(&mut self) -> u64 {
+        self.incoming += 1;
+        self.incoming
+    }
+
+    /// Reset sequence numbers.
+    pub fn reset(&mut self) {
+        self.outgoing = 0;
+        self.incoming = 0;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -5508,5 +5686,27 @@ mod tests {
         let params = CalendarParams::new().start("2024-01-01").end("2024-12-31");
         assert_eq!(params.start, Some("2024-01-01".to_string()));
         assert_eq!(params.end, Some("2024-12-31".to_string()));
+    }
+
+    #[test]
+    fn test_fix_session_config() {
+        let config = FixSessionConfig::new("SENDER", "TARGET", "localhost", 9876)
+            .version(FixVersion::Fix44)
+            .heartbeat_interval(60);
+        assert_eq!(config.sender_comp_id, "SENDER");
+        assert_eq!(config.target_comp_id, "TARGET");
+        assert_eq!(config.version, FixVersion::Fix44);
+        assert_eq!(config.heartbeat_interval, 60);
+    }
+
+    #[test]
+    fn test_fix_sequence_numbers() {
+        let mut seq = FixSequenceNumbers::new();
+        assert_eq!(seq.next_outgoing(), 1);
+        assert_eq!(seq.next_outgoing(), 2);
+        assert_eq!(seq.next_incoming(), 1);
+        seq.reset();
+        assert_eq!(seq.outgoing, 0);
+        assert_eq!(seq.incoming, 0);
     }
 }
