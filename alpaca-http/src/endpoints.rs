@@ -2049,6 +2049,110 @@ impl AlpacaHttpClient {
     }
 }
 
+// ============================================================================
+// Broker API Events (SSE) Endpoints
+// ============================================================================
+
+impl AlpacaHttpClient {
+    /// Get account status events (SSE endpoint URL).
+    ///
+    /// Note: This returns the URL for SSE streaming. Use an SSE client to connect.
+    ///
+    /// # Arguments
+    /// * `params` - Optional query parameters
+    ///
+    /// # Returns
+    /// SSE endpoint URL
+    #[must_use]
+    pub fn get_account_status_events_url(&self, params: &SseEventParams) -> String {
+        let base = "/v1/events/accounts/status";
+        self.build_sse_url(base, params)
+    }
+
+    /// Get transfer status events (SSE endpoint URL).
+    ///
+    /// Note: This returns the URL for SSE streaming. Use an SSE client to connect.
+    ///
+    /// # Arguments
+    /// * `params` - Optional query parameters
+    ///
+    /// # Returns
+    /// SSE endpoint URL
+    #[must_use]
+    pub fn get_transfer_status_events_url(&self, params: &SseEventParams) -> String {
+        let base = "/v1/events/transfers/status";
+        self.build_sse_url(base, params)
+    }
+
+    /// Get trade events (SSE endpoint URL).
+    ///
+    /// Note: This returns the URL for SSE streaming. Use an SSE client to connect.
+    ///
+    /// # Arguments
+    /// * `params` - Optional query parameters
+    ///
+    /// # Returns
+    /// SSE endpoint URL
+    #[must_use]
+    pub fn get_trade_events_url(&self, params: &SseEventParams) -> String {
+        let base = "/v1/events/trades";
+        self.build_sse_url(base, params)
+    }
+
+    /// Get journal status events (SSE endpoint URL).
+    ///
+    /// Note: This returns the URL for SSE streaming. Use an SSE client to connect.
+    ///
+    /// # Arguments
+    /// * `params` - Optional query parameters
+    ///
+    /// # Returns
+    /// SSE endpoint URL
+    #[must_use]
+    pub fn get_journal_status_events_url(&self, params: &SseEventParams) -> String {
+        let base = "/v1/events/journals/status";
+        self.build_sse_url(base, params)
+    }
+
+    /// Get non-trade activity events (SSE endpoint URL).
+    ///
+    /// Note: This returns the URL for SSE streaming. Use an SSE client to connect.
+    ///
+    /// # Arguments
+    /// * `params` - Optional query parameters
+    ///
+    /// # Returns
+    /// SSE endpoint URL
+    #[must_use]
+    pub fn get_nta_events_url(&self, params: &SseEventParams) -> String {
+        let base = "/v2beta1/events/nta";
+        self.build_sse_url(base, params)
+    }
+
+    /// Build SSE URL with query parameters.
+    fn build_sse_url(&self, base: &str, params: &SseEventParams) -> String {
+        let mut url = base.to_string();
+        let mut query_parts = Vec::new();
+
+        if let Some(ref account_id) = params.account_id {
+            query_parts.push(format!("account_id={}", account_id));
+        }
+        if let Some(ref since) = params.since {
+            query_parts.push(format!("since={}", since));
+        }
+        if let Some(ref until) = params.until {
+            query_parts.push(format!("until={}", until));
+        }
+
+        if !query_parts.is_empty() {
+            url.push('?');
+            url.push_str(&query_parts.join("&"));
+        }
+
+        url
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

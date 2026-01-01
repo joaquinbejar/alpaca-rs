@@ -3178,6 +3178,244 @@ impl OAuthRevokeRequest {
     }
 }
 
+// ============================================================================
+// Broker API Events (SSE) Types
+// ============================================================================
+
+/// Account status event type.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum AccountStatusEventType {
+    /// Account opened.
+    AccountOpened,
+    /// Account updated.
+    AccountUpdated,
+    /// Account approval pending.
+    AccountApprovalPending,
+    /// Account approved.
+    AccountApproved,
+    /// Account rejected.
+    AccountRejected,
+    /// Account disabled.
+    AccountDisabled,
+    /// Account enabled.
+    AccountEnabled,
+}
+
+/// Account status event from SSE stream.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AccountStatusEvent {
+    /// Event ID.
+    pub id: String,
+    /// Account ID.
+    pub account_id: String,
+    /// Event type.
+    pub event_type: AccountStatusEventType,
+    /// Event timestamp.
+    pub at: DateTime<Utc>,
+    /// Status message.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status_message: Option<String>,
+}
+
+/// Transfer status event type.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum TransferStatusEventType {
+    /// Transfer queued.
+    TransferQueued,
+    /// Transfer pending.
+    TransferPending,
+    /// Transfer approved.
+    TransferApproved,
+    /// Transfer complete.
+    TransferComplete,
+    /// Transfer returned.
+    TransferReturned,
+    /// Transfer canceled.
+    TransferCanceled,
+}
+
+/// Transfer status event from SSE stream.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TransferStatusEvent {
+    /// Event ID.
+    pub id: String,
+    /// Account ID.
+    pub account_id: String,
+    /// Transfer ID.
+    pub transfer_id: String,
+    /// Event type.
+    pub event_type: TransferStatusEventType,
+    /// Event timestamp.
+    pub at: DateTime<Utc>,
+    /// Amount.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub amount: Option<String>,
+}
+
+/// Trade event from SSE stream.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct BrokerTradeEvent {
+    /// Event ID.
+    pub id: String,
+    /// Account ID.
+    pub account_id: String,
+    /// Order ID.
+    pub order_id: String,
+    /// Symbol.
+    pub symbol: String,
+    /// Side.
+    pub side: OrderSide,
+    /// Quantity.
+    pub qty: String,
+    /// Price.
+    pub price: String,
+    /// Event timestamp.
+    pub at: DateTime<Utc>,
+}
+
+/// Journal status event type.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum JournalStatusEventType {
+    /// Journal pending.
+    JournalPending,
+    /// Journal executed.
+    JournalExecuted,
+    /// Journal canceled.
+    JournalCanceled,
+    /// Journal rejected.
+    JournalRejected,
+}
+
+/// Journal status event from SSE stream.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct JournalStatusEvent {
+    /// Event ID.
+    pub id: String,
+    /// Journal ID.
+    pub journal_id: String,
+    /// Event type.
+    pub event_type: JournalStatusEventType,
+    /// Event timestamp.
+    pub at: DateTime<Utc>,
+    /// From account.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub from_account: Option<String>,
+    /// To account.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub to_account: Option<String>,
+}
+
+/// Non-trade activity event type.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum NonTradeActivityType {
+    /// Dividend.
+    Div,
+    /// Dividend tax.
+    Divtax,
+    /// Interest.
+    Int,
+    /// Journal entry.
+    Jnl,
+    /// Merger/acquisition.
+    Ma,
+    /// Fee.
+    Fee,
+    /// Deposit.
+    Csd,
+    /// Withdrawal.
+    Csw,
+}
+
+/// Non-trade activity event from SSE stream.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct NonTradeActivityEvent {
+    /// Event ID.
+    pub id: String,
+    /// Account ID.
+    pub account_id: String,
+    /// Activity type.
+    pub activity_type: NonTradeActivityType,
+    /// Event timestamp.
+    pub at: DateTime<Utc>,
+    /// Symbol (if applicable).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub symbol: Option<String>,
+    /// Amount.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub amount: Option<String>,
+    /// Description.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+
+/// SSE event wrapper for all broker events.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(tag = "event_type")]
+pub enum BrokerSseEvent {
+    /// Account status event.
+    #[serde(rename = "account_status")]
+    AccountStatus(AccountStatusEvent),
+    /// Transfer status event.
+    #[serde(rename = "transfer_status")]
+    TransferStatus(TransferStatusEvent),
+    /// Trade event.
+    #[serde(rename = "trade")]
+    Trade(BrokerTradeEvent),
+    /// Journal status event.
+    #[serde(rename = "journal_status")]
+    JournalStatus(JournalStatusEvent),
+    /// Non-trade activity event.
+    #[serde(rename = "nta")]
+    NonTradeActivity(NonTradeActivityEvent),
+}
+
+/// Parameters for SSE event stream.
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct SseEventParams {
+    /// Filter by account ID.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub account_id: Option<String>,
+    /// Start timestamp.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub since: Option<String>,
+    /// Until timestamp.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub until: Option<String>,
+}
+
+impl SseEventParams {
+    /// Create new empty parameters.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Filter by account ID.
+    #[must_use]
+    pub fn account_id(mut self, account_id: &str) -> Self {
+        self.account_id = Some(account_id.to_string());
+        self
+    }
+
+    /// Set since timestamp.
+    #[must_use]
+    pub fn since(mut self, since: &str) -> Self {
+        self.since = Some(since.to_string());
+        self
+    }
+
+    /// Set until timestamp.
+    #[must_use]
+    pub fn until(mut self, until: &str) -> Self {
+        self.until = Some(until.to_string());
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -3592,5 +3830,22 @@ mod tests {
 
         assert_eq!(token.auth_header(), "Bearer abc123");
         assert!(token.has_refresh_token());
+    }
+
+    #[test]
+    fn test_account_status_event_type_serialization() {
+        let event_type = AccountStatusEventType::AccountApproved;
+        let json = serde_json::to_string(&event_type).unwrap();
+        assert_eq!(json, "\"ACCOUNT_APPROVED\"");
+    }
+
+    #[test]
+    fn test_sse_event_params_builder() {
+        let params = SseEventParams::new()
+            .account_id("acc-123")
+            .since("2024-01-01T00:00:00Z");
+
+        assert_eq!(params.account_id, Some("acc-123".to_string()));
+        assert_eq!(params.since, Some("2024-01-01T00:00:00Z".to_string()));
     }
 }
