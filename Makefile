@@ -60,7 +60,7 @@ fix:
 	cargo fix --allow-staged --allow-dirty
 
 .PHONY: pre-push
-pre-push: fix fmt lint-fix test readme doc
+pre-push: fix fmt lint-fix test doc
 
 .PHONY: doc
 doc:
@@ -71,7 +71,7 @@ doc-open:
 	cargo doc --open
 
 .PHONY: publish
-publish: readme
+publish:
 	cargo login ${CARGO_REGISTRY_TOKEN}
 	cargo package
 	cargo publish
@@ -106,14 +106,6 @@ git-log:
 .PHONY: create-doc
 create-doc:
 	cargo doc --no-deps --document-private-items
-
-.PHONY: readme
-readme: check-cargo-readme create-doc
-	cargo readme > README.md
-
-.PHONY: check-cargo-readme
-check-cargo-readme:
-	@command -v cargo-readme > /dev/null || (echo "Installing cargo-readme..."; cargo install cargo-readme)
 
 .PHONY: check-spanish
 check-spanish:

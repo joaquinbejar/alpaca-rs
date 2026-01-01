@@ -73,10 +73,7 @@ impl ApiErrorCode {
     /// Returns true if this error is retryable.
     #[must_use]
     pub fn is_retryable(&self) -> bool {
-        matches!(
-            self,
-            Self::RateLimitExceeded | Self::InternalServerError
-        )
+        matches!(self, Self::RateLimitExceeded | Self::InternalServerError)
     }
 }
 
@@ -326,7 +323,9 @@ impl AlpacaError {
             Self::RateLimit { .. } => true,
             Self::Network(_) => true,
             Self::Timeout(_) => true,
-            Self::Api { status, error_code, .. } => {
+            Self::Api {
+                status, error_code, ..
+            } => {
                 // 5xx errors are retryable
                 if *status >= 500 {
                     return true;
@@ -342,7 +341,9 @@ impl AlpacaError {
     #[must_use]
     pub fn retry_after(&self) -> Option<u64> {
         match self {
-            Self::RateLimit { retry_after_secs, .. } => Some(*retry_after_secs),
+            Self::RateLimit {
+                retry_after_secs, ..
+            } => Some(*retry_after_secs),
             _ => None,
         }
     }
@@ -387,9 +388,18 @@ mod tests {
 
     #[test]
     fn test_api_error_code_from_code() {
-        assert_eq!(ApiErrorCode::from_code(40010000), ApiErrorCode::MalformedRequest);
-        assert_eq!(ApiErrorCode::from_code(40110000), ApiErrorCode::InvalidCredentials);
-        assert_eq!(ApiErrorCode::from_code(42910000), ApiErrorCode::RateLimitExceeded);
+        assert_eq!(
+            ApiErrorCode::from_code(40010000),
+            ApiErrorCode::MalformedRequest
+        );
+        assert_eq!(
+            ApiErrorCode::from_code(40110000),
+            ApiErrorCode::InvalidCredentials
+        );
+        assert_eq!(
+            ApiErrorCode::from_code(42910000),
+            ApiErrorCode::RateLimitExceeded
+        );
         assert_eq!(ApiErrorCode::from_code(99999999), ApiErrorCode::Unknown);
     }
 
@@ -420,7 +430,7 @@ mod tests {
             .with_remaining(0)
             .with_limit(200)
             .with_retry_after(60);
-        
+
         assert!(info.is_limited());
         assert_eq!(info.remaining, Some(0));
         assert_eq!(info.limit, Some(200));
@@ -456,7 +466,7 @@ mod tests {
             ApiErrorCode::NotFound,
             Some("req-123".to_string()),
         );
-        
+
         assert_eq!(err.status_code(), Some(404));
         assert_eq!(err.request_id(), Some("req-123"));
         assert!(!err.is_retryable());
@@ -464,9 +474,8 @@ mod tests {
 
     #[test]
     fn test_api_error_response() {
-        let response = ApiErrorResponse::new(40410000, "not found")
-            .with_request_id("req-456");
-        
+        let response = ApiErrorResponse::new(40410000, "not found").with_request_id("req-456");
+
         assert_eq!(response.error_code(), ApiErrorCode::NotFound);
         assert_eq!(response.request_id, Some("req-456".to_string()));
     }

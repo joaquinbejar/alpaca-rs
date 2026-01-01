@@ -18,8 +18,10 @@
 //! cargo run --example trading_bracket_order
 //! ```
 
+use alpaca_base::{
+    Credentials, Environment, OrderQueryStatus, OrderSide, OrderType, StopLoss, TakeProfit,
+};
 use alpaca_http::{AlpacaHttpClient, CreateOrderRequest, OrderParams};
-use alpaca_base::{OrderSide, OrderType, OrderQueryStatus, TakeProfit, StopLoss, Environment, Credentials};
 use std::env;
 
 #[tokio::main]
@@ -27,10 +29,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Load environment variables from .env file
     dotenvy::dotenv().ok();
 
-    let api_key = env::var("ALPACA_API_KEY")
-        .expect("ALPACA_API_KEY must be set in .env file");
-    let api_secret = env::var("ALPACA_API_SECRET")
-        .expect("ALPACA_API_SECRET must be set in .env file");
+    let api_key = env::var("ALPACA_API_KEY").expect("ALPACA_API_KEY must be set in .env file");
+    let api_secret =
+        env::var("ALPACA_API_SECRET").expect("ALPACA_API_SECRET must be set in .env file");
     let base_url = env::var("ALPACA_BASE_URL")
         .unwrap_or_else(|_| "https://paper-api.alpaca.markets".to_string());
 
@@ -56,10 +57,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Example 1: Create a bracket order
     // This creates a buy order with automatic take-profit and stop-loss legs
     println!("\n--- Creating Bracket Order ---");
-    
+
     let take_profit = TakeProfit::new("160.00");
     let stop_loss = StopLoss::with_limit("140.00", "139.50");
-    
+
     let bracket_order = CreateOrderRequest::bracket(
         "AAPL",
         OrderSide::Buy,
@@ -72,7 +73,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .client_order_id("bracket-example-001");
 
     println!("Bracket order request: {:?}", bracket_order);
-    
+
     // Uncomment to actually submit the order:
     // let order = client.create_order(&bracket_order).await?;
     // println!("Created bracket order: {:?}", order);
@@ -97,50 +98,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Stop order: {:?}", stop_order);
 
     // Stop-limit order
-    let stop_limit_order = CreateOrderRequest::stop_limit(
-        "AAPL",
-        OrderSide::Sell,
-        "1",
-        "145.00",
-        "144.50",
-    )
-    .client_order_id("stop-limit-example-001");
+    let stop_limit_order =
+        CreateOrderRequest::stop_limit("AAPL", OrderSide::Sell, "1", "145.00", "144.50")
+            .client_order_id("stop-limit-example-001");
     println!("Stop-limit order: {:?}", stop_limit_order);
 
     // Trailing stop order (by price)
-    let trailing_stop_price = CreateOrderRequest::trailing_stop_price(
-        "AAPL",
-        OrderSide::Sell,
-        "1",
-        "5.00",
-    )
-    .client_order_id("trailing-price-example-001");
+    let trailing_stop_price =
+        CreateOrderRequest::trailing_stop_price("AAPL", OrderSide::Sell, "1", "5.00")
+            .client_order_id("trailing-price-example-001");
     println!("Trailing stop (price): {:?}", trailing_stop_price);
 
     // Trailing stop order (by percent)
-    let trailing_stop_percent = CreateOrderRequest::trailing_stop_percent(
-        "AAPL",
-        OrderSide::Sell,
-        "1",
-        "2.5",
-    )
-    .client_order_id("trailing-percent-example-001");
+    let trailing_stop_percent =
+        CreateOrderRequest::trailing_stop_percent("AAPL", OrderSide::Sell, "1", "2.5")
+            .client_order_id("trailing-percent-example-001");
     println!("Trailing stop (percent): {:?}", trailing_stop_percent);
 
     // Example 3: Query existing orders
     println!("\n--- Querying Orders ---");
-    
+
     let order_params = OrderParams::new()
         .status(OrderQueryStatus::All)
         .limit(10)
         .nested(true);
-    
+
     let orders = client.get_orders(&order_params).await?;
     println!("Found {} orders", orders.len());
-    
+
     for order in orders.iter().take(5) {
         println!(
-            "  - {} {} {} @ {:?} ({})",
+            "  - {:?} {} {} @ {:?} ({:?})",
             order.side,
             order.qty.as_deref().unwrap_or("N/A"),
             order.symbol,

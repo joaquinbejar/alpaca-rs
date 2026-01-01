@@ -3,8 +3,8 @@
 //! This module provides the main HTTP client for interacting with the Alpaca REST API.
 
 use alpaca_base::{
-    AlpacaError, ApiErrorCode, RateLimitInfo, Result,
-    auth::Credentials, types::Environment, utils::UrlBuilder,
+    AlpacaError, ApiErrorCode, RateLimitInfo, Result, auth::Credentials, types::Environment,
+    utils::UrlBuilder,
 };
 use reqwest::{Client, Method, RequestBuilder, Response};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
@@ -169,13 +169,13 @@ impl AlpacaHttpClient {
                 .and_then(|h| h.to_str().ok())
                 .and_then(|s| s.parse().ok())
                 .unwrap_or(60u64);
-            
+
             warn!("Rate limited, retry after {} seconds", retry_after);
-            
+
             let info = rate_limit_info
                 .unwrap_or_default()
                 .with_retry_after(retry_after);
-            
+
             return Err(AlpacaError::rate_limit_with_info(info));
         }
 
@@ -189,7 +189,8 @@ impl AlpacaHttpClient {
             error!("API error response: {}", response_text);
 
             // Try to parse structured error response
-            if let Ok(error_response) = serde_json::from_str::<ApiErrorResponseBody>(&response_text) {
+            if let Ok(error_response) = serde_json::from_str::<ApiErrorResponseBody>(&response_text)
+            {
                 let error_code = if error_response.code > 0 {
                     Some(ApiErrorCode::from_code(error_response.code))
                 } else {
@@ -239,17 +240,20 @@ impl AlpacaHttpClient {
     }
 
     /// Parse rate limit information from response headers.
-    fn parse_rate_limit_headers(&self, headers: &reqwest::header::HeaderMap) -> Option<RateLimitInfo> {
+    fn parse_rate_limit_headers(
+        &self,
+        headers: &reqwest::header::HeaderMap,
+    ) -> Option<RateLimitInfo> {
         let remaining = headers
             .get("x-ratelimit-remaining")
             .and_then(|h| h.to_str().ok())
             .and_then(|s| s.parse().ok());
-        
+
         let limit = headers
             .get("x-ratelimit-limit")
             .and_then(|h| h.to_str().ok())
             .and_then(|s| s.parse().ok());
-        
+
         let reset = headers
             .get("x-ratelimit-reset")
             .and_then(|h| h.to_str().ok())

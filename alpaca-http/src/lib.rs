@@ -9,4 +9,5 @@ pub mod error;
 
 pub use alpaca_base::*;
 pub use client::AlpacaHttpClient;
+pub use endpoints::{CreateOrderRequest, OrderParams, ReplaceOrderRequest};
 pub use error::HttpError;

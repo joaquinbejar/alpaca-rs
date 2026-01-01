@@ -184,7 +184,12 @@ pub mod assertions {
     use super::*;
 
     /// Asserts that an order has the expected basic properties.
-    pub fn assert_order_basics(order: &Order, symbol: &str, side: OrderSide, order_type: OrderType) {
+    pub fn assert_order_basics(
+        order: &Order,
+        symbol: &str,
+        side: OrderSide,
+        order_type: OrderType,
+    ) {
         assert_eq!(order.symbol, symbol);
         assert_eq!(order.side, side);
         assert_eq!(order.order_type, order_type);
