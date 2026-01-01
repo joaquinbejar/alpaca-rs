@@ -2228,6 +2228,75 @@ impl AlpacaHttpClient {
     }
 }
 
+// ============================================================================
+// Enhanced Account Activities Endpoints
+// ============================================================================
+
+impl AlpacaHttpClient {
+    /// List account activities with filtering.
+    ///
+    /// # Arguments
+    /// * `params` - Query parameters for filtering
+    ///
+    /// # Returns
+    /// List of account activities
+    pub async fn list_activities(
+        &self,
+        params: &ListActivitiesParams,
+    ) -> Result<Vec<AccountActivity>> {
+        self.get_with_params("/v2/account/activities", params).await
+    }
+
+    /// List account activities by type.
+    ///
+    /// # Arguments
+    /// * `activity_type` - Activity type to filter by
+    /// * `params` - Additional query parameters
+    ///
+    /// # Returns
+    /// List of account activities
+    pub async fn list_activities_by_type(
+        &self,
+        activity_type: &str,
+        params: &ListActivitiesParams,
+    ) -> Result<Vec<AccountActivity>> {
+        self.get_with_params(&format!("/v2/account/activities/{}", activity_type), params)
+            .await
+    }
+
+    /// List all broker accounts activities.
+    ///
+    /// # Arguments
+    /// * `params` - Query parameters for filtering
+    ///
+    /// # Returns
+    /// List of account activities across all accounts
+    pub async fn list_broker_activities(
+        &self,
+        params: &ListActivitiesParams,
+    ) -> Result<Vec<AccountActivity>> {
+        self.get_with_params("/v1/accounts/activities", params)
+            .await
+    }
+
+    /// List activities for a specific broker account.
+    ///
+    /// # Arguments
+    /// * `account_id` - Account ID
+    /// * `params` - Query parameters for filtering
+    ///
+    /// # Returns
+    /// List of account activities
+    pub async fn list_broker_account_activities(
+        &self,
+        account_id: &str,
+        params: &ListActivitiesParams,
+    ) -> Result<Vec<AccountActivity>> {
+        self.get_with_params(&format!("/v1/accounts/{}/activities", account_id), params)
+            .await
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

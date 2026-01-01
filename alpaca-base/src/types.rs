@@ -3700,6 +3700,145 @@ impl ListAnnouncementsParams {
     }
 }
 
+// ============================================================================
+// Enhanced Account Activities Types
+// ============================================================================
+
+/// Trade activity with detailed fields.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TradeActivity {
+    /// Activity ID.
+    pub id: String,
+    /// Activity type.
+    pub activity_type: ActivityType,
+    /// Transaction time.
+    pub transaction_time: DateTime<Utc>,
+    /// Symbol.
+    pub symbol: String,
+    /// Order ID.
+    pub order_id: Uuid,
+    /// Side.
+    pub side: OrderSide,
+    /// Quantity.
+    pub qty: String,
+    /// Price.
+    pub price: String,
+    /// Cumulative quantity.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cum_qty: Option<String>,
+    /// Leaves quantity.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub leaves_qty: Option<String>,
+}
+
+/// Non-trade activity with detailed fields.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct NonTradeActivity {
+    /// Activity ID.
+    pub id: String,
+    /// Activity type.
+    pub activity_type: ActivityType,
+    /// Date.
+    pub date: String,
+    /// Net amount.
+    pub net_amount: String,
+    /// Symbol (if applicable).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub symbol: Option<String>,
+    /// Quantity (if applicable).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub qty: Option<String>,
+    /// Per share amount.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub per_share_amount: Option<String>,
+    /// Description.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+
+/// Parameters for listing account activities.
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct ListActivitiesParams {
+    /// Filter by activity types (comma-separated).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub activity_types: Option<String>,
+    /// Filter by date.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub date: Option<String>,
+    /// Filter until date.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub until: Option<String>,
+    /// Filter after date.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub after: Option<String>,
+    /// Sort direction.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub direction: Option<SortDirection>,
+    /// Page size.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub page_size: Option<u32>,
+    /// Page token.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub page_token: Option<String>,
+}
+
+impl ListActivitiesParams {
+    /// Create new empty parameters.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Filter by activity types.
+    #[must_use]
+    pub fn activity_types(mut self, types: &str) -> Self {
+        self.activity_types = Some(types.to_string());
+        self
+    }
+
+    /// Filter by date.
+    #[must_use]
+    pub fn date(mut self, date: &str) -> Self {
+        self.date = Some(date.to_string());
+        self
+    }
+
+    /// Filter until date.
+    #[must_use]
+    pub fn until(mut self, until: &str) -> Self {
+        self.until = Some(until.to_string());
+        self
+    }
+
+    /// Filter after date.
+    #[must_use]
+    pub fn after(mut self, after: &str) -> Self {
+        self.after = Some(after.to_string());
+        self
+    }
+
+    /// Set sort direction.
+    #[must_use]
+    pub fn direction(mut self, direction: SortDirection) -> Self {
+        self.direction = Some(direction);
+        self
+    }
+
+    /// Set page size.
+    #[must_use]
+    pub fn page_size(mut self, size: u32) -> Self {
+        self.page_size = Some(size);
+        self
+    }
+
+    /// Set page token.
+    #[must_use]
+    pub fn page_token(mut self, token: &str) -> Self {
+        self.page_token = Some(token.to_string());
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -4150,5 +4289,28 @@ mod tests {
         assert_eq!(params.status, Some(AssetStatus::Active));
         assert_eq!(params.asset_class, Some("us_equity".to_string()));
         assert_eq!(params.exchange, Some("NYSE".to_string()));
+    }
+
+    #[test]
+    fn test_activity_type_serialization() {
+        let activity = ActivityType::Fill;
+        let json = serde_json::to_string(&activity).unwrap();
+        assert_eq!(json, "\"FILL\"");
+
+        let div = ActivityType::Div;
+        let json = serde_json::to_string(&div).unwrap();
+        assert_eq!(json, "\"DIV\"");
+    }
+
+    #[test]
+    fn test_list_activities_params_builder() {
+        let params = ListActivitiesParams::new()
+            .activity_types("FILL,DIV")
+            .direction(SortDirection::Desc)
+            .page_size(100);
+
+        assert_eq!(params.activity_types, Some("FILL,DIV".to_string()));
+        assert_eq!(params.direction, Some(SortDirection::Desc));
+        assert_eq!(params.page_size, Some(100));
     }
 }
