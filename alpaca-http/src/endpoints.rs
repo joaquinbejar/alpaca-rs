@@ -2406,6 +2406,31 @@ impl AlpacaHttpClient {
     }
 }
 
+// ============================================================================
+// Local Currency Trading Endpoints
+// ============================================================================
+
+impl AlpacaHttpClient {
+    /// Get exchange rates.
+    ///
+    /// # Returns
+    /// List of exchange rates
+    pub async fn get_exchange_rates(&self) -> Result<Vec<ExchangeRate>> {
+        self.get("/v1/fx/rates").await
+    }
+
+    /// Get specific exchange rate.
+    ///
+    /// # Arguments
+    /// * `currency_pair` - Currency pair (e.g., "EUR/USD")
+    ///
+    /// # Returns
+    /// Exchange rate
+    pub async fn get_exchange_rate(&self, currency_pair: &str) -> Result<ExchangeRate> {
+        self.get(&format!("/v1/fx/rates/{}", currency_pair)).await
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
