@@ -4443,6 +4443,168 @@ impl BuyingPowerCalculator {
     }
 }
 
+// ============================================================================
+// Fractional Trading Types
+// ============================================================================
+
+/// Fractional quantity with precision.
+#[derive(Debug, Clone, PartialEq)]
+pub struct FractionalQty {
+    /// The quantity value.
+    value: f64,
+}
+
+impl FractionalQty {
+    /// Minimum fractional quantity.
+    pub const MIN: f64 = 0.000001;
+
+    /// Create new fractional quantity.
+    ///
+    /// # Arguments
+    /// * `value` - The quantity value
+    ///
+    /// # Returns
+    /// Some(FractionalQty) if valid, None if invalid
+    #[must_use]
+    pub fn new(value: f64) -> Option<Self> {
+        if value >= Self::MIN {
+            Some(Self { value })
+        } else {
+            None
+        }
+    }
+
+    /// Get the value.
+    #[must_use]
+    pub fn value(&self) -> f64 {
+        self.value
+    }
+
+    /// Check if this is a whole number.
+    #[must_use]
+    pub fn is_whole(&self) -> bool {
+        (self.value - self.value.round()).abs() < Self::MIN
+    }
+
+    /// Round to whole shares.
+    #[must_use]
+    pub fn to_whole(&self) -> u64 {
+        self.value.floor() as u64
+    }
+}
+
+impl std::fmt::Display for FractionalQty {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:.6}", self.value)
+    }
+}
+
+/// Notional order amount (dollar-based).
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct NotionalAmount {
+    /// The dollar amount.
+    pub amount: String,
+}
+
+impl NotionalAmount {
+    /// Minimum notional amount ($1).
+    pub const MIN: f64 = 1.0;
+
+    /// Create new notional amount.
+    #[must_use]
+    pub fn new(amount: &str) -> Self {
+        Self {
+            amount: amount.to_string(),
+        }
+    }
+
+    /// Create from f64.
+    #[must_use]
+    pub fn from_f64(amount: f64) -> Option<Self> {
+        if amount >= Self::MIN {
+            Some(Self {
+                amount: format!("{:.2}", amount),
+            })
+        } else {
+            None
+        }
+    }
+
+    /// Parse to f64.
+    #[must_use]
+    pub fn to_f64(&self) -> Option<f64> {
+        self.amount.parse().ok()
+    }
+
+    /// Validate the notional amount.
+    #[must_use]
+    pub fn is_valid(&self) -> bool {
+        self.to_f64().is_some_and(|v| v >= Self::MIN)
+    }
+}
+
+/// Fractional trading validation.
+#[derive(Debug, Clone)]
+pub struct FractionalValidator {
+    /// Minimum order size.
+    pub min_order_size: f64,
+    /// Minimum trade increment.
+    pub min_trade_increment: f64,
+}
+
+impl Default for FractionalValidator {
+    fn default() -> Self {
+        Self {
+            min_order_size: 0.000001,
+            min_trade_increment: 0.000001,
+        }
+    }
+}
+
+impl FractionalValidator {
+    /// Create new validator.
+    #[must_use]
+    pub fn new(min_order_size: f64, min_trade_increment: f64) -> Self {
+        Self {
+            min_order_size,
+            min_trade_increment,
+        }
+    }
+
+    /// Validate a fractional quantity.
+    #[must_use]
+    pub fn validate_qty(&self, qty: f64) -> bool {
+        qty >= self.min_order_size
+    }
+
+    /// Validate a notional amount.
+    #[must_use]
+    pub fn validate_notional(&self, amount: f64) -> bool {
+        amount >= NotionalAmount::MIN
+    }
+
+    /// Round quantity to valid increment.
+    #[must_use]
+    pub fn round_qty(&self, qty: f64) -> f64 {
+        let increments = (qty / self.min_trade_increment).floor();
+        increments * self.min_trade_increment
+    }
+}
+
+/// Fractional order type restrictions.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Default)]
+pub enum FractionalOrderRestriction {
+    /// Only market orders allowed.
+    #[default]
+    MarketOnly,
+    /// Market and limit orders allowed.
+    MarketAndLimit,
+    /// All order types allowed.
+    All,
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -4978,5 +5140,27 @@ mod tests {
         assert!((calc.buying_power() - 20000.0).abs() < f64::EPSILON);
         assert_eq!(calc.max_shares(100.0), 200);
         assert_eq!(calc.max_shares(0.0), 0);
+    }
+
+    #[test]
+    fn test_fractional_qty() {
+        let qty = FractionalQty::new(1.5).unwrap();
+        assert!((qty.value() - 1.5).abs() < f64::EPSILON);
+        assert!(!qty.is_whole());
+        assert_eq!(qty.to_whole(), 1);
+
+        let whole = FractionalQty::new(5.0).unwrap();
+        assert!(whole.is_whole());
+
+        assert!(FractionalQty::new(0.0).is_none());
+    }
+
+    #[test]
+    fn test_notional_amount() {
+        let amount = NotionalAmount::from_f64(100.50).unwrap();
+        assert_eq!(amount.amount, "100.50");
+        assert!(amount.is_valid());
+
+        assert!(NotionalAmount::from_f64(0.5).is_none());
     }
 }
