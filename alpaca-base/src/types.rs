@@ -4907,8 +4907,7 @@ impl TradingDay {
 // ============================================================================
 
 /// FIX protocol version.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum FixVersion {
     /// FIX 4.2.
     #[serde(rename = "FIX.4.2")]
@@ -4918,7 +4917,6 @@ pub enum FixVersion {
     #[serde(rename = "FIX.4.4")]
     Fix44,
 }
-
 
 impl std::fmt::Display for FixVersion {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -5030,8 +5028,7 @@ impl FixMsgType {
 }
 
 /// FIX session state.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum FixSessionState {
     /// Disconnected.
     #[default]
@@ -5043,7 +5040,6 @@ pub enum FixSessionState {
     /// Logging out.
     LoggingOut,
 }
-
 
 /// FIX sequence numbers.
 #[derive(Debug, Clone, Default)]
@@ -5077,6 +5073,131 @@ impl FixSequenceNumbers {
     pub fn reset(&mut self) {
         self.outgoing = 0;
         self.incoming = 0;
+    }
+}
+
+// ============================================================================
+// Statements and Confirmations Types
+// ============================================================================
+
+/// Statement document type.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StatementType {
+    /// Monthly account statement.
+    AccountStatement,
+    /// Trade confirmation.
+    TradeConfirmation,
+    /// Tax document.
+    TaxDocument,
+}
+
+/// Tax form type.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TaxFormType {
+    /// Form 1099-B (proceeds from broker transactions).
+    #[serde(rename = "1099-B")]
+    Form1099B,
+    /// Form 1099-DIV (dividends and distributions).
+    #[serde(rename = "1099-DIV")]
+    Form1099Div,
+    /// Form 1099-INT (interest income).
+    #[serde(rename = "1099-INT")]
+    Form1099Int,
+}
+
+/// Account document/statement.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AccountDocument {
+    /// Document ID.
+    pub id: String,
+    /// Account ID.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub account_id: Option<String>,
+    /// Document type.
+    pub document_type: StatementType,
+    /// Document date.
+    pub date: String,
+    /// Download URL.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+}
+
+/// Trade confirmation document.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TradeConfirmation {
+    /// Confirmation ID.
+    pub id: String,
+    /// Trade date.
+    pub trade_date: String,
+    /// Settlement date.
+    pub settlement_date: String,
+    /// Symbol.
+    pub symbol: String,
+    /// Side (buy/sell).
+    pub side: String,
+    /// Quantity.
+    pub qty: String,
+    /// Price.
+    pub price: String,
+    /// Total amount.
+    pub amount: String,
+}
+
+/// Tax document.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TaxDocument {
+    /// Document ID.
+    pub id: String,
+    /// Tax year.
+    pub tax_year: u16,
+    /// Form type.
+    pub form_type: TaxFormType,
+    /// Download URL.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+}
+
+/// Document query parameters.
+#[derive(Debug, Serialize, Clone, Default)]
+pub struct DocumentParams {
+    /// Start date (YYYY-MM-DD).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub start: Option<String>,
+    /// End date (YYYY-MM-DD).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub end: Option<String>,
+    /// Document type filter.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub document_type: Option<StatementType>,
+}
+
+impl DocumentParams {
+    /// Create new document params.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Set start date.
+    #[must_use]
+    pub fn start(mut self, date: &str) -> Self {
+        self.start = Some(date.to_string());
+        self
+    }
+
+    /// Set end date.
+    #[must_use]
+    pub fn end(mut self, date: &str) -> Self {
+        self.end = Some(date.to_string());
+        self
+    }
+
+    /// Set document type filter.
+    #[must_use]
+    pub fn document_type(mut self, doc_type: StatementType) -> Self {
+        self.document_type = Some(doc_type);
+        self
     }
 }
 
@@ -5708,5 +5829,16 @@ mod tests {
         seq.reset();
         assert_eq!(seq.outgoing, 0);
         assert_eq!(seq.incoming, 0);
+    }
+
+    #[test]
+    fn test_document_params_builder() {
+        let params = DocumentParams::new()
+            .start("2024-01-01")
+            .end("2024-12-31")
+            .document_type(StatementType::AccountStatement);
+        assert_eq!(params.start, Some("2024-01-01".to_string()));
+        assert_eq!(params.end, Some("2024-12-31".to_string()));
+        assert_eq!(params.document_type, Some(StatementType::AccountStatement));
     }
 }
