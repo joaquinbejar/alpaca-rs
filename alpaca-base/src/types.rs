@@ -1000,6 +1000,397 @@ impl OptionBarsParams {
     }
 }
 
+// ============================================================================
+// Enhanced Stock Market Data Types
+// ============================================================================
+
+/// Data feed source.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum DataFeed {
+    /// IEX exchange data.
+    Iex,
+    /// SIP (Securities Information Processor) data.
+    Sip,
+    /// OTC (Over-The-Counter) data.
+    Otc,
+}
+
+/// Stock snapshot with latest market data.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct StockSnapshot {
+    /// Latest trade.
+    #[serde(rename = "latestTrade")]
+    pub latest_trade: Option<Trade>,
+    /// Latest quote.
+    #[serde(rename = "latestQuote")]
+    pub latest_quote: Option<Quote>,
+    /// Current minute bar.
+    #[serde(rename = "minuteBar")]
+    pub minute_bar: Option<Bar>,
+    /// Current daily bar.
+    #[serde(rename = "dailyBar")]
+    pub daily_bar: Option<Bar>,
+    /// Previous daily bar.
+    #[serde(rename = "prevDailyBar")]
+    pub prev_daily_bar: Option<Bar>,
+}
+
+/// Corporate action type.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum CorporateActionType {
+    /// Cash dividend.
+    Dividend,
+    /// Stock split.
+    Split,
+    /// Reverse stock split.
+    ReverseSplit,
+    /// Spinoff.
+    Spinoff,
+    /// Merger.
+    Merger,
+    /// Rights issue.
+    Rights,
+    /// Stock distribution.
+    StockDividend,
+    /// Redemption.
+    Redemption,
+    /// Name change.
+    NameChange,
+    /// Symbol change.
+    SymbolChange,
+    /// Worthless security.
+    Worthless,
+}
+
+/// Corporate action announcement.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CorporateAction {
+    /// Unique identifier.
+    pub id: String,
+    /// Corporate action type.
+    #[serde(rename = "ca_type")]
+    pub action_type: CorporateActionType,
+    /// Sub-type of the action.
+    #[serde(rename = "ca_sub_type")]
+    pub sub_type: Option<String>,
+    /// Initiating symbol.
+    pub initiating_symbol: Option<String>,
+    /// Initiating original CUSIP.
+    pub initiating_original_cusip: Option<String>,
+    /// Target symbol.
+    pub target_symbol: Option<String>,
+    /// Target original CUSIP.
+    pub target_original_cusip: Option<String>,
+    /// Declaration date.
+    pub declaration_date: Option<String>,
+    /// Ex-date.
+    pub ex_date: Option<String>,
+    /// Record date.
+    pub record_date: Option<String>,
+    /// Payable date.
+    pub payable_date: Option<String>,
+    /// Cash amount per share.
+    pub cash: Option<String>,
+    /// Old rate (for splits).
+    pub old_rate: Option<String>,
+    /// New rate (for splits).
+    pub new_rate: Option<String>,
+}
+
+/// Limit Up Limit Down (LULD) data.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Luld {
+    /// LULD indicator.
+    #[serde(rename = "i")]
+    pub indicator: String,
+    /// Limit up price.
+    #[serde(rename = "u")]
+    pub limit_up_price: f64,
+    /// Limit down price.
+    #[serde(rename = "d")]
+    pub limit_down_price: f64,
+    /// Timestamp.
+    #[serde(rename = "t")]
+    pub timestamp: DateTime<Utc>,
+}
+
+/// Trading status update.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TradingStatus {
+    /// Status code.
+    #[serde(rename = "sc")]
+    pub status_code: String,
+    /// Status message.
+    #[serde(rename = "sm")]
+    pub status_message: String,
+    /// Reason code.
+    #[serde(rename = "rc")]
+    pub reason_code: String,
+    /// Reason message.
+    #[serde(rename = "rm")]
+    pub reason_message: String,
+    /// Timestamp.
+    #[serde(rename = "t")]
+    pub timestamp: DateTime<Utc>,
+}
+
+/// Auction data.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Auction {
+    /// Auction type (open, close).
+    #[serde(rename = "at")]
+    pub auction_type: String,
+    /// Auction price.
+    #[serde(rename = "ap")]
+    pub price: Option<f64>,
+    /// Auction size.
+    #[serde(rename = "as")]
+    pub size: Option<u64>,
+    /// Timestamp.
+    #[serde(rename = "t")]
+    pub timestamp: DateTime<Utc>,
+}
+
+/// Parameters for multi-symbol bars request.
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct MultiBarsParams {
+    /// Comma-separated list of symbols.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub symbols: Option<String>,
+    /// Timeframe (e.g., "1Min", "1Hour", "1Day").
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub timeframe: Option<String>,
+    /// Start time (RFC3339).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub start: Option<String>,
+    /// End time (RFC3339).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub end: Option<String>,
+    /// Maximum number of bars per symbol.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub limit: Option<u32>,
+    /// Data feed source.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub feed: Option<DataFeed>,
+    /// Pagination token.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub page_token: Option<String>,
+}
+
+impl MultiBarsParams {
+    /// Create new parameters with symbols.
+    #[must_use]
+    pub fn new(symbols: &str) -> Self {
+        Self {
+            symbols: Some(symbols.to_string()),
+            ..Default::default()
+        }
+    }
+
+    /// Set timeframe.
+    #[must_use]
+    pub fn timeframe(mut self, timeframe: &str) -> Self {
+        self.timeframe = Some(timeframe.to_string());
+        self
+    }
+
+    /// Set time range.
+    #[must_use]
+    pub fn time_range(mut self, start: &str, end: &str) -> Self {
+        self.start = Some(start.to_string());
+        self.end = Some(end.to_string());
+        self
+    }
+
+    /// Set data feed.
+    #[must_use]
+    pub fn feed(mut self, feed: DataFeed) -> Self {
+        self.feed = Some(feed);
+        self
+    }
+
+    /// Set limit.
+    #[must_use]
+    pub fn limit(mut self, limit: u32) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+}
+
+/// Parameters for multi-symbol quotes request.
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct MultiQuotesParams {
+    /// Comma-separated list of symbols.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub symbols: Option<String>,
+    /// Start time (RFC3339).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub start: Option<String>,
+    /// End time (RFC3339).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub end: Option<String>,
+    /// Maximum number of quotes per symbol.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub limit: Option<u32>,
+    /// Data feed source.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub feed: Option<DataFeed>,
+    /// Pagination token.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub page_token: Option<String>,
+}
+
+impl MultiQuotesParams {
+    /// Create new parameters with symbols.
+    #[must_use]
+    pub fn new(symbols: &str) -> Self {
+        Self {
+            symbols: Some(symbols.to_string()),
+            ..Default::default()
+        }
+    }
+
+    /// Set time range.
+    #[must_use]
+    pub fn time_range(mut self, start: &str, end: &str) -> Self {
+        self.start = Some(start.to_string());
+        self.end = Some(end.to_string());
+        self
+    }
+
+    /// Set data feed.
+    #[must_use]
+    pub fn feed(mut self, feed: DataFeed) -> Self {
+        self.feed = Some(feed);
+        self
+    }
+
+    /// Set limit.
+    #[must_use]
+    pub fn limit(mut self, limit: u32) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+}
+
+/// Parameters for multi-symbol trades request.
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct MultiTradesParams {
+    /// Comma-separated list of symbols.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub symbols: Option<String>,
+    /// Start time (RFC3339).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub start: Option<String>,
+    /// End time (RFC3339).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub end: Option<String>,
+    /// Maximum number of trades per symbol.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub limit: Option<u32>,
+    /// Data feed source.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub feed: Option<DataFeed>,
+    /// Pagination token.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub page_token: Option<String>,
+}
+
+impl MultiTradesParams {
+    /// Create new parameters with symbols.
+    #[must_use]
+    pub fn new(symbols: &str) -> Self {
+        Self {
+            symbols: Some(symbols.to_string()),
+            ..Default::default()
+        }
+    }
+
+    /// Set time range.
+    #[must_use]
+    pub fn time_range(mut self, start: &str, end: &str) -> Self {
+        self.start = Some(start.to_string());
+        self.end = Some(end.to_string());
+        self
+    }
+
+    /// Set data feed.
+    #[must_use]
+    pub fn feed(mut self, feed: DataFeed) -> Self {
+        self.feed = Some(feed);
+        self
+    }
+
+    /// Set limit.
+    #[must_use]
+    pub fn limit(mut self, limit: u32) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+}
+
+/// Parameters for corporate actions request.
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct CorporateActionsParams {
+    /// Filter by symbols.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub symbols: Option<String>,
+    /// Filter by action types.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub types: Option<String>,
+    /// Start date (YYYY-MM-DD).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub start: Option<String>,
+    /// End date (YYYY-MM-DD).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub end: Option<String>,
+    /// Maximum number of results.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub limit: Option<u32>,
+    /// Pagination token.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub page_token: Option<String>,
+}
+
+impl CorporateActionsParams {
+    /// Create new empty parameters.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Filter by symbols.
+    #[must_use]
+    pub fn symbols(mut self, symbols: &str) -> Self {
+        self.symbols = Some(symbols.to_string());
+        self
+    }
+
+    /// Filter by action types.
+    #[must_use]
+    pub fn types(mut self, types: &str) -> Self {
+        self.types = Some(types.to_string());
+        self
+    }
+
+    /// Set date range.
+    #[must_use]
+    pub fn date_range(mut self, start: &str, end: &str) -> Self {
+        self.start = Some(start.to_string());
+        self.end = Some(end.to_string());
+        self
+    }
+
+    /// Set limit.
+    #[must_use]
+    pub fn limit(mut self, limit: u32) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1180,5 +1571,55 @@ mod tests {
         assert_eq!(params.start, Some("2024-01-01".to_string()));
         assert_eq!(params.end, Some("2024-03-01".to_string()));
         assert_eq!(params.limit, Some(100));
+    }
+
+    #[test]
+    fn test_data_feed_serialization() {
+        let feed = DataFeed::Sip;
+        let json = serde_json::to_string(&feed).unwrap();
+        assert_eq!(json, "\"sip\"");
+
+        let feed = DataFeed::Iex;
+        let json = serde_json::to_string(&feed).unwrap();
+        assert_eq!(json, "\"iex\"");
+    }
+
+    #[test]
+    fn test_corporate_action_type_serialization() {
+        let action = CorporateActionType::Dividend;
+        let json = serde_json::to_string(&action).unwrap();
+        assert_eq!(json, "\"dividend\"");
+
+        let action = CorporateActionType::Split;
+        let json = serde_json::to_string(&action).unwrap();
+        assert_eq!(json, "\"split\"");
+    }
+
+    #[test]
+    fn test_multi_bars_params_builder() {
+        let params = MultiBarsParams::new("AAPL,MSFT,GOOGL")
+            .timeframe("1Day")
+            .time_range("2024-01-01", "2024-03-01")
+            .feed(DataFeed::Sip)
+            .limit(100);
+
+        assert_eq!(params.symbols, Some("AAPL,MSFT,GOOGL".to_string()));
+        assert_eq!(params.timeframe, Some("1Day".to_string()));
+        assert_eq!(params.feed, Some(DataFeed::Sip));
+        assert_eq!(params.limit, Some(100));
+    }
+
+    #[test]
+    fn test_corporate_actions_params_builder() {
+        let params = CorporateActionsParams::new()
+            .symbols("AAPL,MSFT")
+            .types("dividend,split")
+            .date_range("2024-01-01", "2024-12-31")
+            .limit(50);
+
+        assert_eq!(params.symbols, Some("AAPL,MSFT".to_string()));
+        assert_eq!(params.types, Some("dividend,split".to_string()));
+        assert_eq!(params.start, Some("2024-01-01".to_string()));
+        assert_eq!(params.limit, Some(50));
     }
 }
