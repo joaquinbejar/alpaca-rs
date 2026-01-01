@@ -1,6 +1,6 @@
 [package]
 name = "alpaca-http"
-version = "0.16.0"
+version = "0.17.0"
 edition = "2024"
 authors = ["Joaquin Bejar <jb@taunais.com>"]
 description = "HTTP REST API client for Alpaca trading platform"

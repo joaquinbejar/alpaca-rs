@@ -4648,8 +4648,7 @@ impl PaperTradingConfig {
 }
 
 /// Trading environment.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum TradingEnvironment {
     /// Live trading environment.
     Live,
@@ -4696,7 +4695,6 @@ impl TradingEnvironment {
         }
     }
 }
-
 
 /// Paper trading account reset request.
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
@@ -4759,6 +4757,148 @@ impl EnvironmentGuard {
     #[must_use]
     pub fn environment(&self) -> TradingEnvironment {
         self.environment
+    }
+}
+
+// ============================================================================
+// Calendar and Clock Types
+// ============================================================================
+
+/// Market session type.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum MarketSession {
+    /// Pre-market session (4:00 AM - 9:30 AM ET).
+    PreMarket,
+    /// Regular market session (9:30 AM - 4:00 PM ET).
+    Regular,
+    /// After-hours session (4:00 PM - 8:00 PM ET).
+    AfterHours,
+    /// Market is closed.
+    Closed,
+}
+
+impl MarketSession {
+    /// Check if trading is allowed in this session.
+    #[must_use]
+    pub fn is_trading_allowed(&self) -> bool {
+        !matches!(self, Self::Closed)
+    }
+
+    /// Check if this is the regular session.
+    #[must_use]
+    pub fn is_regular(&self) -> bool {
+        matches!(self, Self::Regular)
+    }
+}
+
+/// Enhanced calendar day information.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CalendarDay {
+    /// Trading date.
+    pub date: String,
+    /// Market open time.
+    pub open: String,
+    /// Market close time.
+    pub close: String,
+    /// Settlement date.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub settlement_date: Option<String>,
+    /// Pre-market session open time.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub session_open: Option<String>,
+    /// After-hours session close time.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub session_close: Option<String>,
+}
+
+/// Enhanced market clock information.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct MarketClock {
+    /// Current timestamp.
+    pub timestamp: String,
+    /// Whether the market is open.
+    pub is_open: bool,
+    /// Next market open time.
+    pub next_open: String,
+    /// Next market close time.
+    pub next_close: String,
+}
+
+impl MarketClock {
+    /// Get the current market session.
+    #[must_use]
+    pub fn current_session(&self) -> MarketSession {
+        if self.is_open {
+            MarketSession::Regular
+        } else {
+            MarketSession::Closed
+        }
+    }
+}
+
+/// Calendar query parameters.
+#[derive(Debug, Serialize, Clone, Default)]
+pub struct CalendarParams {
+    /// Start date (YYYY-MM-DD).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub start: Option<String>,
+    /// End date (YYYY-MM-DD).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub end: Option<String>,
+}
+
+impl CalendarParams {
+    /// Create new calendar params.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Set start date.
+    #[must_use]
+    pub fn start(mut self, date: &str) -> Self {
+        self.start = Some(date.to_string());
+        self
+    }
+
+    /// Set end date.
+    #[must_use]
+    pub fn end(mut self, date: &str) -> Self {
+        self.end = Some(date.to_string());
+        self
+    }
+}
+
+/// Trading day utilities.
+#[derive(Debug, Clone)]
+pub struct TradingDay {
+    /// The date string (YYYY-MM-DD).
+    pub date: String,
+    /// Whether this is a trading day.
+    pub is_trading_day: bool,
+}
+
+impl TradingDay {
+    /// Create a new trading day.
+    #[must_use]
+    pub fn new(date: &str, is_trading_day: bool) -> Self {
+        Self {
+            date: date.to_string(),
+            is_trading_day,
+        }
+    }
+
+    /// Create a trading day (market open).
+    #[must_use]
+    pub fn trading(date: &str) -> Self {
+        Self::new(date, true)
+    }
+
+    /// Create a non-trading day (market closed).
+    #[must_use]
+    pub fn non_trading(date: &str) -> Self {
+        Self::new(date, false)
     }
 }
 
@@ -5350,5 +5490,23 @@ mod tests {
 
         let live_guard = EnvironmentGuard::allow_live(TradingEnvironment::Live);
         assert!(live_guard.is_allowed());
+    }
+
+    #[test]
+    fn test_market_session() {
+        let regular = MarketSession::Regular;
+        assert!(regular.is_trading_allowed());
+        assert!(regular.is_regular());
+
+        let closed = MarketSession::Closed;
+        assert!(!closed.is_trading_allowed());
+        assert!(!closed.is_regular());
+    }
+
+    #[test]
+    fn test_calendar_params_builder() {
+        let params = CalendarParams::new().start("2024-01-01").end("2024-12-31");
+        assert_eq!(params.start, Some("2024-01-01".to_string()));
+        assert_eq!(params.end, Some("2024-12-31".to_string()));
     }
 }
