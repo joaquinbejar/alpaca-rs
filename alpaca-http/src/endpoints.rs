@@ -1250,6 +1250,210 @@ impl AlpacaHttpClient {
     }
 }
 
+// ============================================================================
+// Broker API - Account Management Endpoints
+// ============================================================================
+
+impl AlpacaHttpClient {
+    // ========================================================================
+    // Broker Account Endpoints
+    // ========================================================================
+
+    /// Create a new broker account.
+    ///
+    /// # Arguments
+    /// * `request` - Account creation request with KYC data
+    ///
+    /// # Returns
+    /// The created broker account
+    pub async fn create_broker_account(
+        &self,
+        request: &CreateBrokerAccountRequest,
+    ) -> Result<BrokerAccount> {
+        self.post("/v1/accounts", request).await
+    }
+
+    /// List all broker accounts.
+    ///
+    /// # Arguments
+    /// * `params` - Optional query parameters for filtering
+    ///
+    /// # Returns
+    /// List of broker accounts
+    pub async fn list_broker_accounts(
+        &self,
+        params: &ListBrokerAccountsParams,
+    ) -> Result<Vec<BrokerAccount>> {
+        self.get_with_params("/v1/accounts", params).await
+    }
+
+    /// Get a broker account by ID.
+    ///
+    /// # Arguments
+    /// * `account_id` - The account ID
+    ///
+    /// # Returns
+    /// The broker account
+    pub async fn get_broker_account(&self, account_id: &str) -> Result<BrokerAccount> {
+        self.get(&format!("/v1/accounts/{}", account_id)).await
+    }
+
+    /// Update a broker account.
+    ///
+    /// # Arguments
+    /// * `account_id` - The account ID
+    /// * `request` - Update request with fields to change
+    ///
+    /// # Returns
+    /// The updated broker account
+    pub async fn update_broker_account(
+        &self,
+        account_id: &str,
+        request: &UpdateBrokerAccountRequest,
+    ) -> Result<BrokerAccount> {
+        self.patch(&format!("/v1/accounts/{}", account_id), request)
+            .await
+    }
+
+    /// Close a broker account.
+    ///
+    /// # Arguments
+    /// * `account_id` - The account ID to close
+    pub async fn close_broker_account(&self, account_id: &str) -> Result<()> {
+        self.delete(&format!("/v1/accounts/{}", account_id)).await
+    }
+
+    /// Get trading account details for a broker account.
+    ///
+    /// # Arguments
+    /// * `account_id` - The broker account ID
+    ///
+    /// # Returns
+    /// Trading account details
+    pub async fn get_broker_trading_account(&self, account_id: &str) -> Result<Account> {
+        self.get(&format!("/v1/accounts/{}/trading", account_id))
+            .await
+    }
+
+    // ========================================================================
+    // CIP (Customer Identification Program) Endpoints
+    // ========================================================================
+
+    /// Submit CIP data for an account.
+    ///
+    /// # Arguments
+    /// * `account_id` - The account ID
+    /// * `cip_info` - CIP information to submit
+    ///
+    /// # Returns
+    /// The submitted CIP info
+    pub async fn submit_cip(&self, account_id: &str, cip_info: &CipInfo) -> Result<CipInfo> {
+        self.post(&format!("/v1/accounts/{}/cip", account_id), cip_info)
+            .await
+    }
+
+    /// Get CIP status for an account.
+    ///
+    /// # Arguments
+    /// * `account_id` - The account ID
+    ///
+    /// # Returns
+    /// CIP information
+    pub async fn get_cip(&self, account_id: &str) -> Result<CipInfo> {
+        self.get(&format!("/v1/accounts/{}/cip", account_id)).await
+    }
+
+    // ========================================================================
+    // Document Endpoints
+    // ========================================================================
+
+    /// Upload a document for an account.
+    ///
+    /// # Arguments
+    /// * `account_id` - The account ID
+    /// * `document` - Document to upload
+    ///
+    /// # Returns
+    /// Upload confirmation
+    pub async fn upload_document(
+        &self,
+        account_id: &str,
+        document: &Document,
+    ) -> Result<DocumentUploadResponse> {
+        self.post(
+            &format!("/v1/accounts/{}/documents/upload", account_id),
+            document,
+        )
+        .await
+    }
+
+    /// List documents for an account.
+    ///
+    /// # Arguments
+    /// * `account_id` - The account ID
+    ///
+    /// # Returns
+    /// List of documents
+    pub async fn list_documents(&self, account_id: &str) -> Result<Vec<DocumentInfo>> {
+        self.get(&format!("/v1/accounts/{}/documents", account_id))
+            .await
+    }
+
+    /// Get a specific document.
+    ///
+    /// # Arguments
+    /// * `account_id` - The account ID
+    /// * `document_id` - The document ID
+    ///
+    /// # Returns
+    /// Document information
+    pub async fn get_document(&self, account_id: &str, document_id: &str) -> Result<DocumentInfo> {
+        self.get(&format!(
+            "/v1/accounts/{}/documents/{}",
+            account_id, document_id
+        ))
+        .await
+    }
+
+    /// Delete a document.
+    ///
+    /// # Arguments
+    /// * `account_id` - The account ID
+    /// * `document_id` - The document ID
+    pub async fn delete_document(&self, account_id: &str, document_id: &str) -> Result<()> {
+        self.delete(&format!(
+            "/v1/accounts/{}/documents/{}",
+            account_id, document_id
+        ))
+        .await
+    }
+}
+
+/// Response for document upload.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DocumentUploadResponse {
+    /// Document ID.
+    pub id: String,
+    /// Document type.
+    pub document_type: DocumentType,
+    /// Upload status.
+    pub status: String,
+}
+
+/// Document information.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DocumentInfo {
+    /// Document ID.
+    pub id: String,
+    /// Document type.
+    pub document_type: DocumentType,
+    /// Document sub-type.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub document_sub_type: Option<String>,
+    /// Created at timestamp.
+    pub created_at: DateTime<Utc>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

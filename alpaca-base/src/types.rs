@@ -1391,6 +1391,625 @@ impl CorporateActionsParams {
     }
 }
 
+// ============================================================================
+// Broker API Types - Account Management
+// ============================================================================
+
+/// Broker account status.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum BrokerAccountStatus {
+    /// Account is being onboarded.
+    Onboarding,
+    /// Submission failed.
+    SubmissionFailed,
+    /// Submitted for review.
+    Submitted,
+    /// Account action required.
+    ActionRequired,
+    /// Account is active.
+    Active,
+    /// Account is rejected.
+    Rejected,
+    /// Account is approved.
+    Approved,
+    /// Account is disabled.
+    Disabled,
+    /// Account is closed.
+    AccountClosed,
+}
+
+/// Agreement type for broker accounts.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum AgreementType {
+    /// Margin agreement.
+    MarginAgreement,
+    /// Account agreement.
+    AccountAgreement,
+    /// Customer agreement.
+    CustomerAgreement,
+    /// Crypto agreement.
+    CryptoAgreement,
+    /// Options agreement.
+    OptionsAgreement,
+}
+
+/// Funding source for broker accounts.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum FundingSource {
+    /// Employment income.
+    EmploymentIncome,
+    /// Investments.
+    Investments,
+    /// Inheritance.
+    Inheritance,
+    /// Business income.
+    BusinessIncome,
+    /// Savings.
+    Savings,
+    /// Family.
+    Family,
+}
+
+/// Tax ID type.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum TaxIdType {
+    /// USA Social Security Number.
+    UsaSsn,
+    /// Argentina CUIT.
+    ArgArCuit,
+    /// Australia Tax File Number.
+    AusTfn,
+    /// Australia Business Number.
+    AusAbn,
+    /// Brazil CPF.
+    BraCpf,
+    /// Canada SIN.
+    CanSin,
+    /// Chile RUT.
+    ChlRut,
+    /// Colombia NIT.
+    ColNit,
+    /// Germany Tax ID.
+    DeuTaxId,
+    /// Spain NIE.
+    EspNie,
+    /// France SPI.
+    FraSpi,
+    /// UK National Insurance Number.
+    GbrNino,
+    /// UK Unique Taxpayer Reference.
+    GbrUtr,
+    /// Hong Kong HKID.
+    HkgHkid,
+    /// Hungary Tax Number.
+    HunTin,
+    /// India PAN.
+    IndPan,
+    /// Israel ID.
+    IsrId,
+    /// Italy Fiscal Code.
+    ItaCf,
+    /// Japan My Number.
+    JpnMyNumber,
+    /// South Korea RRN.
+    KorRrn,
+    /// Mexico RFC.
+    MexRfc,
+    /// Netherlands BSN.
+    NldBsn,
+    /// New Zealand IRD.
+    NzlIrd,
+    /// Poland PESEL.
+    PolPesel,
+    /// Sweden Personal Number.
+    SwePn,
+    /// Singapore NRIC.
+    SgpNric,
+    /// Taiwan ID.
+    TwnId,
+    /// Not applicable.
+    NotApplicable,
+}
+
+/// Contact information for broker account.
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct Contact {
+    /// Email address.
+    pub email_address: String,
+    /// Phone number.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub phone_number: Option<String>,
+    /// Street address lines.
+    pub street_address: Vec<String>,
+    /// City.
+    pub city: String,
+    /// State or province.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub state: Option<String>,
+    /// Postal code.
+    pub postal_code: String,
+    /// Country (ISO 3166-1 alpha-3).
+    pub country: String,
+}
+
+impl Contact {
+    /// Create new contact information.
+    #[must_use]
+    pub fn new(email: &str, city: &str, postal_code: &str, country: &str) -> Self {
+        Self {
+            email_address: email.to_string(),
+            phone_number: None,
+            street_address: Vec::new(),
+            city: city.to_string(),
+            state: None,
+            postal_code: postal_code.to_string(),
+            country: country.to_string(),
+        }
+    }
+
+    /// Set phone number.
+    #[must_use]
+    pub fn phone(mut self, phone: &str) -> Self {
+        self.phone_number = Some(phone.to_string());
+        self
+    }
+
+    /// Add street address line.
+    #[must_use]
+    pub fn street(mut self, street: &str) -> Self {
+        self.street_address.push(street.to_string());
+        self
+    }
+
+    /// Set state.
+    #[must_use]
+    pub fn state(mut self, state: &str) -> Self {
+        self.state = Some(state.to_string());
+        self
+    }
+}
+
+/// Identity information for broker account.
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct Identity {
+    /// Given (first) name.
+    pub given_name: String,
+    /// Family (last) name.
+    pub family_name: String,
+    /// Middle name.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub middle_name: Option<String>,
+    /// Date of birth (YYYY-MM-DD).
+    pub date_of_birth: String,
+    /// Tax ID.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tax_id: Option<String>,
+    /// Tax ID type.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tax_id_type: Option<TaxIdType>,
+    /// Country of citizenship (ISO 3166-1 alpha-3).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub country_of_citizenship: Option<String>,
+    /// Country of birth (ISO 3166-1 alpha-3).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub country_of_birth: Option<String>,
+    /// Country of tax residence (ISO 3166-1 alpha-3).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub country_of_tax_residence: Option<String>,
+    /// Funding source.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub funding_source: Option<Vec<FundingSource>>,
+    /// Annual income minimum in USD.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub annual_income_min: Option<String>,
+    /// Annual income maximum in USD.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub annual_income_max: Option<String>,
+    /// Liquid net worth minimum in USD.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub liquid_net_worth_min: Option<String>,
+    /// Liquid net worth maximum in USD.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub liquid_net_worth_max: Option<String>,
+    /// Total net worth minimum in USD.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub total_net_worth_min: Option<String>,
+    /// Total net worth maximum in USD.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub total_net_worth_max: Option<String>,
+}
+
+impl Identity {
+    /// Create new identity information.
+    #[must_use]
+    pub fn new(given_name: &str, family_name: &str, date_of_birth: &str) -> Self {
+        Self {
+            given_name: given_name.to_string(),
+            family_name: family_name.to_string(),
+            date_of_birth: date_of_birth.to_string(),
+            ..Default::default()
+        }
+    }
+
+    /// Set tax ID.
+    #[must_use]
+    pub fn tax_id(mut self, tax_id: &str, tax_id_type: TaxIdType) -> Self {
+        self.tax_id = Some(tax_id.to_string());
+        self.tax_id_type = Some(tax_id_type);
+        self
+    }
+
+    /// Set country of citizenship.
+    #[must_use]
+    pub fn citizenship(mut self, country: &str) -> Self {
+        self.country_of_citizenship = Some(country.to_string());
+        self
+    }
+
+    /// Set funding sources.
+    #[must_use]
+    pub fn funding_sources(mut self, sources: Vec<FundingSource>) -> Self {
+        self.funding_source = Some(sources);
+        self
+    }
+}
+
+/// Disclosures for broker account.
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct Disclosures {
+    /// Is the account holder a control person.
+    pub is_control_person: bool,
+    /// Is affiliated with exchange or FINRA.
+    pub is_affiliated_exchange_or_finra: bool,
+    /// Is politically exposed.
+    pub is_politically_exposed: bool,
+    /// Has immediate family exposed.
+    pub immediate_family_exposed: bool,
+    /// Employment status.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub employment_status: Option<String>,
+    /// Employer name.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub employer_name: Option<String>,
+    /// Employer address.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub employer_address: Option<String>,
+    /// Employment position.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub employment_position: Option<String>,
+}
+
+impl Disclosures {
+    /// Create new disclosures with all false.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Set control person status.
+    #[must_use]
+    pub fn control_person(mut self, is_control: bool) -> Self {
+        self.is_control_person = is_control;
+        self
+    }
+
+    /// Set employment information.
+    #[must_use]
+    pub fn employment(mut self, status: &str, employer: &str, position: &str) -> Self {
+        self.employment_status = Some(status.to_string());
+        self.employer_name = Some(employer.to_string());
+        self.employment_position = Some(position.to_string());
+        self
+    }
+}
+
+/// Agreement for broker account.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Agreement {
+    /// Agreement type.
+    pub agreement: AgreementType,
+    /// When the agreement was signed (RFC3339).
+    pub signed_at: String,
+    /// IP address from which agreement was signed.
+    pub ip_address: String,
+    /// Revision of the agreement.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub revision: Option<String>,
+}
+
+impl Agreement {
+    /// Create new agreement.
+    #[must_use]
+    pub fn new(agreement_type: AgreementType, signed_at: &str, ip_address: &str) -> Self {
+        Self {
+            agreement: agreement_type,
+            signed_at: signed_at.to_string(),
+            ip_address: ip_address.to_string(),
+            revision: None,
+        }
+    }
+}
+
+/// Trusted contact for broker account.
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct TrustedContact {
+    /// Given name.
+    pub given_name: String,
+    /// Family name.
+    pub family_name: String,
+    /// Email address.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub email_address: Option<String>,
+    /// Phone number.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub phone_number: Option<String>,
+    /// Street address.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub street_address: Option<Vec<String>>,
+    /// City.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub city: Option<String>,
+    /// State.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub state: Option<String>,
+    /// Postal code.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub postal_code: Option<String>,
+    /// Country.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub country: Option<String>,
+}
+
+impl TrustedContact {
+    /// Create new trusted contact.
+    #[must_use]
+    pub fn new(given_name: &str, family_name: &str) -> Self {
+        Self {
+            given_name: given_name.to_string(),
+            family_name: family_name.to_string(),
+            ..Default::default()
+        }
+    }
+
+    /// Set email.
+    #[must_use]
+    pub fn email(mut self, email: &str) -> Self {
+        self.email_address = Some(email.to_string());
+        self
+    }
+
+    /// Set phone.
+    #[must_use]
+    pub fn phone(mut self, phone: &str) -> Self {
+        self.phone_number = Some(phone.to_string());
+        self
+    }
+}
+
+/// Document type for KYC.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum DocumentType {
+    /// Identity verification.
+    IdentityVerification,
+    /// Address verification.
+    AddressVerification,
+    /// Date of birth verification.
+    DateOfBirthVerification,
+    /// Tax ID verification.
+    TaxIdVerification,
+    /// Account approval letter.
+    AccountApprovalLetter,
+    /// W8BEN form.
+    W8ben,
+}
+
+/// Document for broker account.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Document {
+    /// Document type.
+    pub document_type: DocumentType,
+    /// Document sub-type.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub document_sub_type: Option<String>,
+    /// Content (base64 encoded).
+    pub content: String,
+    /// MIME type.
+    pub mime_type: String,
+}
+
+/// Broker account.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct BrokerAccount {
+    /// Account ID.
+    pub id: String,
+    /// Account number.
+    pub account_number: String,
+    /// Account status.
+    pub status: BrokerAccountStatus,
+    /// Crypto status.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub crypto_status: Option<BrokerAccountStatus>,
+    /// Currency.
+    pub currency: String,
+    /// Created at timestamp.
+    pub created_at: DateTime<Utc>,
+    /// Contact information.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub contact: Option<Contact>,
+    /// Identity information.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub identity: Option<Identity>,
+    /// Disclosures.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub disclosures: Option<Disclosures>,
+    /// Agreements.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub agreements: Option<Vec<Agreement>>,
+    /// Trusted contact.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub trusted_contact: Option<TrustedContact>,
+}
+
+/// Request to create a broker account.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CreateBrokerAccountRequest {
+    /// Contact information.
+    pub contact: Contact,
+    /// Identity information.
+    pub identity: Identity,
+    /// Disclosures.
+    pub disclosures: Disclosures,
+    /// Agreements.
+    pub agreements: Vec<Agreement>,
+    /// Documents.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub documents: Option<Vec<Document>>,
+    /// Trusted contact.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub trusted_contact: Option<TrustedContact>,
+    /// Enabled assets (us_equity, crypto).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub enabled_assets: Option<Vec<String>>,
+}
+
+impl CreateBrokerAccountRequest {
+    /// Create new broker account request.
+    #[must_use]
+    pub fn new(
+        contact: Contact,
+        identity: Identity,
+        disclosures: Disclosures,
+        agreements: Vec<Agreement>,
+    ) -> Self {
+        Self {
+            contact,
+            identity,
+            disclosures,
+            agreements,
+            documents: None,
+            trusted_contact: None,
+            enabled_assets: None,
+        }
+    }
+
+    /// Add documents.
+    #[must_use]
+    pub fn documents(mut self, documents: Vec<Document>) -> Self {
+        self.documents = Some(documents);
+        self
+    }
+
+    /// Set trusted contact.
+    #[must_use]
+    pub fn trusted_contact(mut self, contact: TrustedContact) -> Self {
+        self.trusted_contact = Some(contact);
+        self
+    }
+
+    /// Set enabled assets.
+    #[must_use]
+    pub fn enabled_assets(mut self, assets: Vec<String>) -> Self {
+        self.enabled_assets = Some(assets);
+        self
+    }
+}
+
+/// Request to update a broker account.
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct UpdateBrokerAccountRequest {
+    /// Contact information.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub contact: Option<Contact>,
+    /// Identity information.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub identity: Option<Identity>,
+    /// Disclosures.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub disclosures: Option<Disclosures>,
+    /// Trusted contact.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub trusted_contact: Option<TrustedContact>,
+}
+
+/// CIP (Customer Identification Program) info.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CipInfo {
+    /// Provider name.
+    pub provider_name: Vec<String>,
+    /// CIP ID.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    /// CIP result.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub result: Option<String>,
+    /// CIP status.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    /// Created at.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<DateTime<Utc>>,
+    /// Updated at.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub updated_at: Option<DateTime<Utc>>,
+}
+
+/// Parameters for listing broker accounts.
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct ListBrokerAccountsParams {
+    /// Filter by query string.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub query: Option<String>,
+    /// Created after timestamp.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub created_after: Option<String>,
+    /// Created before timestamp.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub created_before: Option<String>,
+    /// Filter by status.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<BrokerAccountStatus>,
+    /// Sort order (asc or desc).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sort: Option<String>,
+    /// Entities to include.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub entities: Option<String>,
+}
+
+impl ListBrokerAccountsParams {
+    /// Create new empty parameters.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Filter by query.
+    #[must_use]
+    pub fn query(mut self, query: &str) -> Self {
+        self.query = Some(query.to_string());
+        self
+    }
+
+    /// Filter by status.
+    #[must_use]
+    pub fn status(mut self, status: BrokerAccountStatus) -> Self {
+        self.status = Some(status);
+        self
+    }
+
+    /// Set sort order.
+    #[must_use]
+    pub fn sort_desc(mut self) -> Self {
+        self.sort = Some("desc".to_string());
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1621,5 +2240,60 @@ mod tests {
         assert_eq!(params.types, Some("dividend,split".to_string()));
         assert_eq!(params.start, Some("2024-01-01".to_string()));
         assert_eq!(params.limit, Some(50));
+    }
+
+    #[test]
+    fn test_broker_account_status_serialization() {
+        let status = BrokerAccountStatus::Active;
+        let json = serde_json::to_string(&status).unwrap();
+        assert_eq!(json, "\"ACTIVE\"");
+
+        let status = BrokerAccountStatus::Onboarding;
+        let json = serde_json::to_string(&status).unwrap();
+        assert_eq!(json, "\"ONBOARDING\"");
+    }
+
+    #[test]
+    fn test_agreement_type_serialization() {
+        let agreement = AgreementType::CustomerAgreement;
+        let json = serde_json::to_string(&agreement).unwrap();
+        assert_eq!(json, "\"customer_agreement\"");
+    }
+
+    #[test]
+    fn test_contact_builder() {
+        let contact = Contact::new("test@example.com", "New York", "10001", "USA")
+            .phone("+1234567890")
+            .street("123 Main St")
+            .state("NY");
+
+        assert_eq!(contact.email_address, "test@example.com");
+        assert_eq!(contact.city, "New York");
+        assert_eq!(contact.phone_number, Some("+1234567890".to_string()));
+        assert_eq!(contact.state, Some("NY".to_string()));
+    }
+
+    #[test]
+    fn test_identity_builder() {
+        let identity = Identity::new("John", "Doe", "1990-01-15")
+            .tax_id("123-45-6789", TaxIdType::UsaSsn)
+            .citizenship("USA");
+
+        assert_eq!(identity.given_name, "John");
+        assert_eq!(identity.family_name, "Doe");
+        assert_eq!(identity.tax_id, Some("123-45-6789".to_string()));
+        assert_eq!(identity.tax_id_type, Some(TaxIdType::UsaSsn));
+    }
+
+    #[test]
+    fn test_disclosures_builder() {
+        let disclosures = Disclosures::new().control_person(false).employment(
+            "employed",
+            "Acme Corp",
+            "Engineer",
+        );
+
+        assert!(!disclosures.is_control_person);
+        assert_eq!(disclosures.employer_name, Some("Acme Corp".to_string()));
     }
 }
