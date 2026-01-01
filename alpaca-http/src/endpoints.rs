@@ -2153,6 +2153,81 @@ impl AlpacaHttpClient {
     }
 }
 
+// ============================================================================
+// Enhanced Assets API Endpoints
+// ============================================================================
+
+impl AlpacaHttpClient {
+    /// List enhanced assets with filtering.
+    ///
+    /// # Arguments
+    /// * `params` - Query parameters for filtering
+    ///
+    /// # Returns
+    /// List of enhanced assets
+    pub async fn list_enhanced_assets(
+        &self,
+        params: &ListAssetsParams,
+    ) -> Result<Vec<EnhancedAsset>> {
+        self.get_with_params("/v2/assets", params).await
+    }
+
+    /// Get enhanced asset by symbol or ID.
+    ///
+    /// # Arguments
+    /// * `symbol_or_id` - Symbol or asset ID
+    ///
+    /// # Returns
+    /// Enhanced asset details
+    pub async fn get_enhanced_asset(&self, symbol_or_id: &str) -> Result<EnhancedAsset> {
+        self.get(&format!("/v2/assets/{}", symbol_or_id)).await
+    }
+
+    /// Get options contracts for an underlying symbol.
+    ///
+    /// # Arguments
+    /// * `symbol` - Underlying symbol
+    ///
+    /// # Returns
+    /// List of option contract assets
+    pub async fn get_asset_options(&self, symbol: &str) -> Result<Vec<OptionContractAsset>> {
+        self.get(&format!("/v2/assets/{}/options", symbol)).await
+    }
+
+    /// List corporate action announcements.
+    ///
+    /// # Arguments
+    /// * `params` - Query parameters for filtering
+    ///
+    /// # Returns
+    /// List of corporate action announcements
+    pub async fn list_announcements(
+        &self,
+        params: &ListAnnouncementsParams,
+    ) -> Result<Vec<CorporateActionAnnouncement>> {
+        self.get_with_params("/v1beta1/corporate-actions/announcements", params)
+            .await
+    }
+
+    /// Get a specific corporate action announcement.
+    ///
+    /// # Arguments
+    /// * `announcement_id` - Announcement ID
+    ///
+    /// # Returns
+    /// Corporate action announcement
+    pub async fn get_announcement(
+        &self,
+        announcement_id: &str,
+    ) -> Result<CorporateActionAnnouncement> {
+        self.get(&format!(
+            "/v1beta1/corporate-actions/announcements/{}",
+            announcement_id
+        ))
+        .await
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
