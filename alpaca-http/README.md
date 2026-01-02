@@ -28,7 +28,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-alpaca-http = "0.21.0"
+alpaca-http = "0.21.1"
 ```
 
 ## Usage

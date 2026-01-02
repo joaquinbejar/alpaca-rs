@@ -289,10 +289,11 @@ impl AlpacaWebSocketClient {
                                     };
 
                                     if let Some(u) = update
-                                        && sender.send(u).is_err() {
-                                            debug!("Channel closed");
-                                            break;
-                                        }
+                                        && sender.send(u).is_err()
+                                    {
+                                        debug!("Channel closed");
+                                        break;
+                                    }
                                 }
                             }
                         }
