@@ -19,10 +19,10 @@ This workspace provides a complete Rust implementation for interacting with Alpa
 
 | Crate | Description | Version | Documentation |
 |-------|-------------|---------|---------------|
-| [`alpaca-base`](/alpaca-base) | Core types, error handling, and utilities | 0.24.0 | [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.rs/alpaca-base) |
-| [`alpaca-http`](/alpaca-http) | HTTP REST API client for trading and market data | 0.20.0 | [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.rs/alpaca-http) |
-| [`alpaca-websocket`](/alpaca-websocket) | WebSocket client for real-time streaming data | 0.2.0 | [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.rs/alpaca-websocket) |
-| [`alpaca-fix`](/alpaca-fix) | FIX protocol client for high-frequency trading | 0.2.0 | [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.rs/alpaca-fix) |
+| [`alpaca-base`](/alpaca-base) | Core types, error handling, and utilities | 0.25.1 | [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.rs/alpaca-base) |
+| [`alpaca-http`](/alpaca-http) | HTTP REST API client for trading and market data | 0.21.1 | [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.rs/alpaca-http) |
+| [`alpaca-websocket`](/alpaca-websocket) | WebSocket client for real-time streaming data | 0.3.1 | [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.rs/alpaca-websocket) |
+| [`alpaca-fix`](/alpaca-fix) | FIX protocol client for high-frequency trading | 0.3.1 | [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.rs/alpaca-fix) |
 
 ## Features
 
