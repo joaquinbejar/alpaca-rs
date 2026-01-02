@@ -88,6 +88,16 @@ Run examples with `cargo run -p alpaca-http --example <name>`:
 | `http_documents` | List and retrieve documents |
 | `http_ira_contributions` | Manage IRA contributions |
 
+### Specialty Examples
+
+| Example | Description |
+|---------|-------------|
+| `http_news` | Fetch market news |
+| `http_exchange_rates` | Get FX exchange rates |
+| `http_market_clock` | Check market open/close status |
+| `http_trading_calendar` | Get trading calendar |
+| `http_corporate_actions` | List corporate actions |
+
 ## Contribution and Contact
 
 We welcome contributions to this project! If you would like to contribute, please follow these steps:
