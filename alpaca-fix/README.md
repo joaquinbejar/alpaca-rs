@@ -31,6 +31,28 @@ Add to your `Cargo.toml`:
 alpaca-fix = "0.2.0"
 ```
 
+## Examples
+
+Run examples with `cargo run -p alpaca-fix --example <name>`:
+
+| Example | Description |
+|---------|-------------|
+| `fix_session_setup` | Configure and set up a FIX session |
+| `fix_new_order_single` | Create New Order Single messages |
+| `fix_order_cancel` | Create Cancel and Cancel/Replace messages |
+| `fix_execution_report` | Execution Report message structure |
+| `fix_market_data_request` | Market Data Request messages |
+
+```bash
+# Session setup example
+cargo run -p alpaca-fix --example fix_session_setup
+
+# New Order Single example
+cargo run -p alpaca-fix --example fix_new_order_single
+```
+
+**Note**: FIX protocol requires special access from Alpaca. Contact Alpaca support to enable FIX access for your account.
+
 ## Contribution and Contact
 
 We welcome contributions to this project! If you would like to contribute, please follow these steps:
