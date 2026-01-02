@@ -3,6 +3,7 @@
 #![allow(missing_docs)]
 
 use crate::{messages::*, streams::*};
+use alpaca_base::types::Quote;
 use alpaca_base::{AlpacaError, Result, auth::Credentials, types::Environment};
 use futures_util::{
     sink::SinkExt,
@@ -41,8 +42,19 @@ pub struct AlpacaWebSocketClient {
     url: String,
 }
 
+/// Data feed type for market data
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DataFeed {
+    /// IEX exchange data (free, delayed)
+    Iex,
+    /// SIP data (paid, real-time)
+    Sip,
+    /// Crypto data
+    Crypto,
+}
+
 impl AlpacaWebSocketClient {
-    /// Create a new WebSocket client
+    /// Create a new WebSocket client for stocks
     pub fn new(credentials: Credentials, environment: Environment) -> Self {
         let url = match environment {
             Environment::Paper => "wss://stream.data.alpaca.markets/v2/iex",
@@ -60,6 +72,32 @@ impl AlpacaWebSocketClient {
     pub fn from_env(environment: Environment) -> Result<Self> {
         let credentials = Credentials::from_env()?;
         Ok(Self::new(credentials, environment))
+    }
+
+    /// Create a WebSocket client for a specific data feed
+    pub fn with_feed(credentials: Credentials, environment: Environment, feed: DataFeed) -> Self {
+        let url = match feed {
+            DataFeed::Iex => "wss://stream.data.alpaca.markets/v2/iex",
+            DataFeed::Sip => "wss://stream.data.alpaca.markets/v2/sip",
+            DataFeed::Crypto => "wss://stream.data.alpaca.markets/v1beta3/crypto/us",
+        };
+
+        Self {
+            credentials,
+            environment,
+            url: url.to_string(),
+        }
+    }
+
+    /// Create a crypto WebSocket client
+    pub fn crypto(credentials: Credentials, environment: Environment) -> Self {
+        Self::with_feed(credentials, environment, DataFeed::Crypto)
+    }
+
+    /// Create a crypto client from environment variables
+    pub fn crypto_from_env(environment: Environment) -> Result<Self> {
+        let credentials = Credentials::from_env()?;
+        Ok(Self::crypto(credentials, environment))
     }
 
     /// Create a trading WebSocket client
@@ -129,22 +167,148 @@ impl AlpacaWebSocketClient {
     /// Subscribe to market data
     pub async fn subscribe_market_data(
         &self,
-        _subscription: SubscribeMessage,
+        subscription: SubscribeMessage,
     ) -> Result<MarketDataStream> {
-        let stream = self.connect().await?;
+        // Initialize crypto provider for TLS
+        init_crypto_provider();
+
         let (sender, receiver) = mpsc::unbounded_channel();
+        info!("Connecting to WebSocket: {}", self.url);
+        let (ws_stream, _) = connect_async(&self.url).await?;
+        let (mut sink, mut stream) = ws_stream.split();
 
-        // Send subscription
-        // Note: In a real implementation, you'd need to send the subscription message
-        // through the WebSocket connection. This is simplified for the example.
+        // Wait for "connected" message from server
+        if let Some(Ok(Message::Text(text))) = stream.next().await {
+            debug!("Server: {}", text);
+        }
 
+        // Authenticate
+        self.authenticate(&mut sink).await?;
+
+        // Wait for authentication response
+        if let Some(Ok(Message::Text(text))) = stream.next().await {
+            debug!("Auth response: {}", text);
+        }
+
+        // Send subscription message - Alpaca uses {"action": "subscribe", ...}
+        let sub_msg = serde_json::json!({
+            "action": "subscribe",
+            "trades": subscription.trades.unwrap_or_default(),
+            "quotes": subscription.quotes.unwrap_or_default(),
+            "bars": subscription.bars.unwrap_or_default()
+        });
+        let sub_json = serde_json::to_string(&sub_msg)?;
+        debug!("Sending subscription: {}", sub_json);
+        sink.send(Message::Text(sub_json.into())).await?;
+
+        // Wait for subscription confirmation
+        if let Some(Ok(Message::Text(text))) = stream.next().await {
+            debug!("Subscription response: {}", text);
+        }
+
+        // Spawn message handler that converts to MarketDataUpdate
+        let credentials = self.credentials.clone();
         tokio::spawn(async move {
-            let mut market_data_stream = stream.market_data();
-            while let Some(update) = market_data_stream.next().await {
-                if sender.send(update).is_err() {
-                    break;
+            let _ = credentials; // Keep credentials alive if needed
+            debug!("Handler started, waiting for messages...");
+            while let Some(message) = stream.next().await {
+                match message {
+                    Ok(Message::Text(text)) => {
+                        // Parse array of messages (Alpaca sends arrays)
+                        if let Ok(messages) = serde_json::from_str::<Vec<serde_json::Value>>(&text)
+                        {
+                            for msg_value in messages {
+                                if let Some(msg_type) = msg_value.get("T").and_then(|t| t.as_str())
+                                {
+                                    let update = match msg_type {
+                                        "t" => {
+                                            // Trade message
+                                            if let Ok(trade_msg) =
+                                                serde_json::from_value::<TradeMessage>(
+                                                    msg_value.clone(),
+                                                )
+                                            {
+                                                Some(MarketDataUpdate::Trade {
+                                                    symbol: trade_msg.symbol.clone(),
+                                                    trade: trade_msg.into(),
+                                                })
+                                            } else {
+                                                None
+                                            }
+                                        }
+                                        "q" => {
+                                            // Quote message - try crypto format first
+                                            if let Ok(quote_msg) =
+                                                serde_json::from_value::<CryptoQuoteMessage>(
+                                                    msg_value.clone(),
+                                                )
+                                            {
+                                                Some(MarketDataUpdate::Quote {
+                                                    symbol: quote_msg.symbol.clone(),
+                                                    quote: Quote {
+                                                        timestamp: quote_msg.timestamp,
+                                                        timeframe: "real-time".to_string(),
+                                                        bid_price: quote_msg.bid_price,
+                                                        bid_size: quote_msg.bid_size as u32,
+                                                        ask_price: quote_msg.ask_price,
+                                                        ask_size: quote_msg.ask_size as u32,
+                                                        bid_exchange: String::new(),
+                                                        ask_exchange: String::new(),
+                                                    },
+                                                })
+                                            } else if let Ok(quote_msg) =
+                                                serde_json::from_value::<QuoteMessage>(
+                                                    msg_value.clone(),
+                                                )
+                                            {
+                                                Some(MarketDataUpdate::Quote {
+                                                    symbol: quote_msg.symbol.clone(),
+                                                    quote: quote_msg.into(),
+                                                })
+                                            } else {
+                                                None
+                                            }
+                                        }
+                                        "b" => {
+                                            // Bar message
+                                            if let Ok(bar_msg) = serde_json::from_value::<BarMessage>(
+                                                msg_value.clone(),
+                                            ) {
+                                                Some(MarketDataUpdate::Bar {
+                                                    symbol: bar_msg.symbol.clone(),
+                                                    bar: bar_msg.into(),
+                                                })
+                                            } else {
+                                                None
+                                            }
+                                        }
+                                        _ => {
+                                            debug!("Ignoring message type: {}", msg_type);
+                                            None
+                                        }
+                                    };
+
+                                    if let Some(u) = update
+                                        && sender.send(u).is_err() {
+                                            debug!("Channel closed");
+                                            break;
+                                        }
+                                }
+                            }
+                        }
+                    }
+                    Ok(Message::Close(_)) => {
+                        info!("WebSocket connection closed");
+                        break;
+                    }
+                    Err(e) => {
+                        error!("WebSocket error: {}", e);
+                        break;
+                    }
+                    _ => {}
                 }
             }
+            info!("Market data handler exiting");
         });
 
         Ok(MarketDataStream::new(receiver))
@@ -169,12 +333,15 @@ impl AlpacaWebSocketClient {
 
     /// Authenticate with the WebSocket
     async fn authenticate(&self, sink: &mut WsSink) -> Result<()> {
-        let auth_msg = WebSocketMessage::Auth(AuthMessage {
-            key: self.credentials.api_key.clone(),
-            secret: self.credentials.secret_key.clone(),
+        // Alpaca uses {"action": "auth", "key": "...", "secret": "..."}
+        let auth_msg = serde_json::json!({
+            "action": "auth",
+            "key": self.credentials.api_key,
+            "secret": self.credentials.secret_key
         });
 
         let auth_json = serde_json::to_string(&auth_msg)?;
+        debug!("Sending auth: {}", auth_json);
         sink.send(Message::Text(auth_json.into())).await?;
 
         debug!("Sent authentication message");

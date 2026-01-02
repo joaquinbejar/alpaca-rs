@@ -10,7 +10,7 @@ pub mod messages;
 pub mod streams;
 
 pub use alpaca_base::*;
-pub use client::AlpacaWebSocketClient;
+pub use client::{AlpacaWebSocketClient, DataFeed};
 pub use config::{ConnectionState, StreamType, WebSocketConfig};
 pub use error::WebSocketError;
 pub use messages::*;

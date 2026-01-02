@@ -24,9 +24,10 @@ use futures_util::StreamExt;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Crypto Stream ===\n");
 
-    // Create WebSocket client for Paper trading
-    let client = AlpacaWebSocketClient::from_env(Environment::Paper)?;
-    println!("WebSocket client created for Paper trading environment");
+    // Create WebSocket client for CRYPTO data (not stocks!)
+    let client = AlpacaWebSocketClient::crypto_from_env(Environment::Paper)?;
+    println!("Crypto WebSocket client created");
+    println!("URL: {}", client.url());
 
     // Define crypto symbols to subscribe to
     let symbols = vec!["BTC/USD".to_string(), "ETH/USD".to_string()];
