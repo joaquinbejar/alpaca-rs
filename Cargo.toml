@@ -40,8 +40,8 @@ rand = "0.9"
 dotenvy = "0.15"
 
 # Internal workspace dependencies
-alpaca-base = { path = "alpaca-base", version = "0.24.0" }
-alpaca-http = { path = "alpaca-http", version = "0.20.0" }
-alpaca-websocket = { path = "alpaca-websocket", version = "0.2.0" }
-alpaca-fix = { path = "alpaca-fix", version = "0.2.0" }
+alpaca-base = { path = "alpaca-base", version = "0.25.0" }
+alpaca-http = { path = "alpaca-http", version = "0.21.0" }
+alpaca-websocket = { path = "alpaca-websocket", version = "0.3.0" }
+alpaca-fix = { path = "alpaca-fix", version = "0.3.0" }
 

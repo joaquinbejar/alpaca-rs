@@ -48,10 +48,10 @@ Add the crates you need to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-alpaca-base = "0.24"
-alpaca-http = "0.20"
-alpaca-websocket = "0.2"
-alpaca-fix = "0.2"
+alpaca-base = "0.25"
+alpaca-http = "0.21"
+alpaca-websocket = "0.3"
+alpaca-fix = "0.3"
 ```
 
 ## Quick Start
