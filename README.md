@@ -95,6 +95,18 @@ Run with `cargo run --example <name>`:
 | `advanced_retry_strategies` | Retry patterns with exponential backoff |
 | `advanced_rate_limiting` | Rate limiting strategies |
 
+### Bots & Strategies Examples
+
+| Example | Description |
+|---------|-------------|
+| `integration_paper_trading_bot` | Simple paper trading bot |
+| `integration_realtime_order_tracker` | Place order and track via WebSocket |
+| `integration_historical_data_download` | Download and save historical bars |
+| `integration_realtime_data_logger` | Log streaming data to file |
+| `integration_bracket_order_with_updates` | Place bracket order and monitor |
+| `integration_portfolio_rebalancer` | Rebalance portfolio to targets |
+| `integration_options_scanner` | Scan and filter options |
+
 ### Base Examples
 
 | Example | Description |
