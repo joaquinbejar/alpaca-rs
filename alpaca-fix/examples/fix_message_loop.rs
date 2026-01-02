@@ -1,7 +1,6 @@
 //! # FIX Message Loop
 //!
-//! This example demonstrates how to receive and process FIX messages
-//! in a continuous loop using the Alpaca FIX client.
+//! This example demonstrates FIX message types and processing patterns.
 //!
 //! ## Prerequisites
 //!
@@ -15,134 +14,67 @@
 //! cargo run -p alpaca-fix --example fix_message_loop
 //! ```
 //!
-//! **Note**: This example demonstrates the API structure. FIX connections
-//! require special credentials and server access.
+//! **Note**: FIX protocol requires special access from Alpaca.
+
+use alpaca_fix::messages::MsgType;
 
 fn main() {
     println!("=== FIX Message Loop ===\n");
 
-    // Message loop overview
-    println!("--- Message Loop Overview ---");
-    println!("  The message loop continuously receives and processes");
-    println!("  incoming FIX messages from the server.");
+    // Show all message types
+    println!("--- FIX Message Types ---");
+    let msg_types = [
+        (MsgType::Heartbeat, "Session heartbeat"),
+        (MsgType::TestRequest, "Connection test"),
+        (MsgType::ResendRequest, "Request message resend"),
+        (MsgType::Reject, "Message rejected"),
+        (MsgType::SequenceReset, "Reset sequence numbers"),
+        (MsgType::Logout, "Session logout"),
+        (MsgType::Logon, "Session logon"),
+        (MsgType::NewOrderSingle, "New order"),
+        (MsgType::ExecutionReport, "Order status update"),
+        (MsgType::OrderCancelRequest, "Cancel order"),
+        (MsgType::OrderCancelReplaceRequest, "Modify order"),
+        (MsgType::MarketDataRequest, "Request market data"),
+    ];
 
-    // Basic message loop
-    println!("\n--- Basic Message Loop ---");
-    println!("  loop {{");
-    println!("      match client.next_message().await {{");
-    println!("          Ok(msg) => {{");
-    println!("              // Process the message");
-    println!("              client.process_message(&msg).await?;");
-    println!("          }}");
-    println!("          Err(e) => {{");
-    println!("              eprintln!(\"Error receiving message: {{}}\", e);");
-    println!("              break;");
-    println!("          }}");
-    println!("      }}");
-    println!("  }}");
+    for (msg_type, description) in msg_types {
+        println!(
+            "  {} = '{}': {}",
+            format!("{:?}", msg_type)
+                .chars()
+                .take(20)
+                .collect::<String>(),
+            msg_type.as_str(),
+            description
+        );
+    }
 
-    // Message type dispatch
-    println!("\n--- Message Type Dispatch ---");
+    // Message categories
+    println!("\n--- Message Categories ---");
+    println!("  Session messages: Heartbeat, TestRequest, Logon, Logout");
+    println!("  Order messages: NewOrderSingle, ExecutionReport");
+    println!("  Cancel messages: OrderCancelRequest, OrderCancelReplaceRequest");
+    println!("  Admin messages: ResendRequest, Reject, SequenceReset");
+
+    // Message loop pattern
+    println!("\n--- Message Loop Pattern ---");
     println!("  loop {{");
     println!("      let msg = client.next_message().await?;");
-    println!("      ");
     println!("      if let Some(msg_type) = msg.msg_type() {{");
     println!("          match msg_type {{");
-    println!("              \"0\" => println!(\"Heartbeat\"),");
-    println!("              \"1\" => println!(\"TestRequest\"),");
-    println!("              \"5\" => {{");
-    println!("                  println!(\"Logout received\");");
-    println!("                  break;");
-    println!("              }}");
-    println!("              \"8\" => {{");
-    println!("                  let report = client.parse_execution_report(&msg)?;");
-    println!("                  handle_execution_report(report);");
-    println!("              }}");
-    println!("              \"9\" => println!(\"OrderCancelReject\"),");
-    println!("              _ => println!(\"Unknown: {{}}\", msg_type),");
+    println!("              \"0\" => {{ /* Heartbeat */ }}");
+    println!("              \"8\" => {{ /* ExecutionReport */ }}");
+    println!("              \"5\" => break, // Logout");
+    println!("              _ => {{}}");
     println!("          }}");
     println!("      }}");
     println!("  }}");
 
-    // Common message types
-    println!("\n--- Common Message Types ---");
-    println!("  0: Heartbeat");
-    println!("  1: TestRequest");
-    println!("  2: ResendRequest");
-    println!("  3: Reject");
-    println!("  4: SequenceReset");
-    println!("  5: Logout");
-    println!("  8: ExecutionReport");
-    println!("  9: OrderCancelReject");
-    println!("  A: Logon");
-    println!("  D: NewOrderSingle");
-    println!("  F: OrderCancelRequest");
-    println!("  G: OrderCancelReplaceRequest");
-
-    // Async message handling
-    println!("\n--- Async Message Handling ---");
-    println!("  // Use tokio::select! for multiple async operations");
-    println!("  loop {{");
-    println!("      tokio::select! {{");
-    println!("          msg = client.next_message() => {{");
-    println!("              match msg {{");
-    println!("                  Ok(m) => process_message(m).await,");
-    println!("                  Err(_) => break,");
-    println!("              }}");
-    println!("          }}");
-    println!("          _ = shutdown_signal.recv() => {{");
-    println!("              println!(\"Shutdown requested\");");
-    println!("              break;");
-    println!("          }}");
-    println!("      }}");
-    println!("  }}");
-
-    // Error handling in loop
-    println!("\n--- Error Handling ---");
-    println!("  let mut consecutive_errors = 0;");
-    println!("  loop {{");
-    println!("      match client.next_message().await {{");
-    println!("          Ok(msg) => {{");
-    println!("              consecutive_errors = 0;");
-    println!("              // Process message...");
-    println!("          }}");
-    println!("          Err(e) => {{");
-    println!("              consecutive_errors += 1;");
-    println!("              if consecutive_errors > 5 {{");
-    println!("                  eprintln!(\"Too many errors, exiting\");");
-    println!("                  break;");
-    println!("              }}");
-    println!("          }}");
-    println!("      }}");
-    println!("  }}");
-
-    // Graceful shutdown
-    println!("\n--- Graceful Shutdown ---");
-    println!("  // Handle Ctrl+C");
-    println!("  let (shutdown_tx, mut shutdown_rx) = mpsc::channel(1);");
-    println!("  ");
-    println!("  tokio::spawn(async move {{");
-    println!("      tokio::signal::ctrl_c().await.unwrap();");
-    println!("      let _ = shutdown_tx.send(()).await;");
-    println!("  }});");
-    println!("  ");
-    println!("  // In message loop, check for shutdown");
-    println!("  // Then disconnect gracefully");
-    println!("  client.disconnect().await?;");
-
-    // Message processing patterns
-    println!("\n--- Message Processing Patterns ---");
-    println!("  1. Synchronous: Process each message before next");
-    println!("  2. Channel-based: Send to worker tasks");
-    println!("  3. Event-driven: Emit events for handlers");
-
-    // Best practices
-    println!("\n--- Best Practices ---");
-    println!("1. Always process session-level messages");
-    println!("2. Handle errors without crashing the loop");
-    println!("3. Implement graceful shutdown");
-    println!("4. Log all incoming messages");
-    println!("5. Monitor message processing latency");
+    // Processing methods
+    println!("\n--- Processing Methods ---");
+    println!("  client.process_message(&msg).await?  // Handle session messages");
+    println!("  client.parse_execution_report(&msg)? // Parse execution report");
 
     println!("\n=== Example Complete ===");
 }
