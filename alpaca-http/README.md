@@ -49,6 +49,45 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+## Examples
+
+Run examples with `cargo run -p alpaca-http --example <name>`:
+
+### Trading Examples
+
+| Example | Description |
+|---------|-------------|
+| `http_get_account` | Get account information |
+| `http_create_market_order` | Create market orders |
+| `http_create_limit_order` | Create limit orders |
+| `http_list_orders` | List and filter orders |
+| `http_cancel_order` | Cancel orders |
+| `http_get_positions` | List positions |
+| `http_close_position` | Close positions |
+
+### Market Data Examples
+
+| Example | Description |
+|---------|-------------|
+| `http_get_bars` | Fetch historical bars |
+| `http_get_quotes` | Fetch quote data |
+| `http_get_trades` | Fetch trade data |
+| `http_list_assets` | List and filter assets |
+| `http_get_clock` | Get market clock |
+| `http_get_calendar` | Get market calendar |
+
+### Broker API Examples
+
+| Example | Description |
+|---------|-------------|
+| `http_create_broker_account` | Create broker accounts |
+| `http_get_broker_account` | Get and list broker accounts |
+| `http_ach_relationships` | Manage ACH funding |
+| `http_transfers` | Create and manage transfers |
+| `http_journals` | Create journal entries |
+| `http_documents` | List and retrieve documents |
+| `http_ira_contributions` | Manage IRA contributions |
+
 ## Contribution and Contact
 
 We welcome contributions to this project! If you would like to contribute, please follow these steps:
