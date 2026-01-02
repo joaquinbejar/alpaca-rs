@@ -1,7 +1,6 @@
 //! # FIX Market Order
 //!
-//! This example demonstrates how to send a market order via FIX protocol
-//! using the Alpaca FIX client.
+//! This example demonstrates how to create market orders via FIX protocol.
 //!
 //! ## Prerequisites
 //!
@@ -15,18 +14,17 @@
 //! cargo run -p alpaca-fix --example fix_market_order
 //! ```
 //!
-//! **Note**: This example demonstrates the API structure. FIX connections
-//! require special credentials and server access.
+//! **Note**: FIX protocol requires special access from Alpaca.
 
-use alpaca_fix::messages::{NewOrderSingle, Side, TimeInForce};
+use alpaca_fix::messages::{NewOrderSingle, OrdType, Side, TimeInForce};
 
 fn main() {
     println!("=== FIX Market Order ===\n");
 
     // Create market buy order
-    println!("--- Create Market Buy Order ---");
+    println!("--- Market Buy Order ---");
     let buy_order = NewOrderSingle::market("AAPL", Side::Buy, 100.0)
-        .with_cl_ord_id("order-001")
+        .with_cl_ord_id("MKT-BUY-001")
         .with_time_in_force(TimeInForce::Day);
 
     println!("  Symbol: {}", buy_order.symbol);
@@ -37,75 +35,61 @@ fn main() {
     println!("  Client Order ID: {}", buy_order.cl_ord_id);
 
     // Create market sell order
-    println!("\n--- Create Market Sell Order ---");
+    println!("\n--- Market Sell Order ---");
     let sell_order = NewOrderSingle::market("MSFT", Side::Sell, 50.0)
-        .with_cl_ord_id("order-002")
+        .with_cl_ord_id("MKT-SELL-001")
         .with_time_in_force(TimeInForce::Day);
 
     println!("  Symbol: {}", sell_order.symbol);
     println!("  Side: {:?}", sell_order.side);
+    println!("  Order Type: {:?}", sell_order.ord_type);
     println!("  Quantity: {}", sell_order.order_qty);
 
-    // Send order
-    println!("\n--- Send Order ---");
-    println!("  // Ensure session is active");
-    println!("  assert_eq!(client.state().await, SessionState::Active);");
-    println!();
-    println!("  // Send the order");
+    // Show all order types
+    println!("\n--- Order Types ---");
+    let order_types = [
+        OrdType::Market,
+        OrdType::Limit,
+        OrdType::Stop,
+        OrdType::StopLimit,
+    ];
+    for ot in order_types {
+        println!("  {:?} = '{}'", ot, ot.as_char());
+    }
+
+    // Show all sides
+    println!("\n--- Order Sides ---");
+    let sides = [Side::Buy, Side::Sell];
+    for s in sides {
+        println!("  {:?} = '{}'", s, s.as_char());
+    }
+
+    // Show time in force options
+    println!("\n--- Time in Force ---");
+    let tifs = [
+        TimeInForce::Day,
+        TimeInForce::Gtc,
+        TimeInForce::Ioc,
+        TimeInForce::Fok,
+    ];
+    for tif in tifs {
+        println!("  {:?} = '{}'", tif, tif.as_char());
+    }
+
+    // FIX message fields
+    println!("\n--- FIX Fields (New Order Single) ---");
+    println!("  MsgType (35): D");
+    println!("  ClOrdID (11): {}", buy_order.cl_ord_id);
+    println!("  Symbol (55): {}", buy_order.symbol);
+    println!("  Side (54): {}", buy_order.side.as_char());
+    println!("  OrdType (40): {}", buy_order.ord_type.as_char());
+    println!("  OrderQty (38): {}", buy_order.order_qty);
+    println!("  TimeInForce (59): {}", buy_order.time_in_force.as_char());
+
+    // Usage note
+    println!("\n--- Sending Orders ---");
+    println!("To send via FIX (requires active session):");
     println!("  let cl_ord_id = client.send_order(&buy_order).await?;");
-    println!("  println!(\"Order sent: {{}}\", cl_ord_id);");
-
-    // New Order Single FIX fields
-    println!("\n--- New Order Single FIX Fields ---");
-    println!("  MsgType (35): D (New Order Single)");
-    println!("  ClOrdID (11): Client order ID");
-    println!("  Symbol (55): Stock symbol");
-    println!("  Side (54): 1=Buy, 2=Sell");
-    println!("  OrdType (40): 1=Market");
-    println!("  OrderQty (38): Order quantity");
-    println!("  TimeInForce (59): 0=Day, 1=GTC, 3=IOC, 4=FOK");
-    println!("  TransactTime (60): Transaction timestamp");
-
-    // Time in Force options
-    println!("\n--- Time in Force Options ---");
-    println!("  Day: Valid for trading day only");
-    println!("  GTC: Good Till Canceled");
-    println!("  IOC: Immediate Or Cancel");
-    println!("  FOK: Fill Or Kill");
-    println!("  OPG: At the Opening");
-    println!("  CLS: At the Close");
-
-    // Market order characteristics
-    println!("\n--- Market Order Characteristics ---");
-    println!("  - Executes immediately at best available price");
-    println!("  - No price guarantee");
-    println!("  - High fill probability");
-    println!("  - May experience slippage in volatile markets");
-    println!("  - Best for liquid securities");
-
-    // Wait for execution report
-    println!("\n--- Wait for Execution Report ---");
-    println!("  loop {{");
-    println!("      let msg = client.next_message().await?;");
-    println!("      if let Some(msg_type) = msg.msg_type() {{");
-    println!("          if msg_type == \"8\" {{ // ExecutionReport");
-    println!("              let report = client.parse_execution_report(&msg)?;");
-    println!("              println!(\"Status: {{:?}}\", report.ord_status);");
-    println!("              if report.ord_status == OrdStatus::Filled {{");
-    println!("                  println!(\"Filled at: {{}}\", report.avg_px);");
-    println!("                  break;");
-    println!("              }}");
-    println!("          }}");
-    println!("      }}");
-    println!("  }}");
-
-    // Best practices
-    println!("\n--- Best Practices ---");
-    println!("1. Use unique client order IDs");
-    println!("2. Track order state via execution reports");
-    println!("3. Handle partial fills");
-    println!("4. Implement timeout for order confirmation");
-    println!("5. Log all order activity");
 
     println!("\n=== Example Complete ===");
 }
