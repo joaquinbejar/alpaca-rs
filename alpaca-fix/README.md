@@ -35,6 +35,8 @@ alpaca-fix = "0.2.0"
 
 Run examples with `cargo run -p alpaca-fix --example <name>`:
 
+### Session & Message Examples
+
 | Example | Description |
 |---------|-------------|
 | `fix_session_setup` | Configure and set up a FIX session |
@@ -42,6 +44,19 @@ Run examples with `cargo run -p alpaca-fix --example <name>`:
 | `fix_order_cancel` | Create Cancel and Cancel/Replace messages |
 | `fix_execution_report` | Execution Report message structure |
 | `fix_market_data_request` | Market Data Request messages |
+
+### Connection & Trading Examples
+
+| Example | Description |
+|---------|-------------|
+| `fix_connect` | Connect to FIX server |
+| `fix_disconnect` | Graceful disconnect |
+| `fix_market_order` | Send market order via FIX |
+| `fix_limit_order` | Send limit order via FIX |
+| `fix_cancel_order` | Cancel order via FIX |
+| `fix_execution_reports` | Process execution reports |
+| `fix_heartbeat` | Heartbeat handling |
+| `fix_message_loop` | Receive and process messages |
 
 ```bash
 # Session setup example
