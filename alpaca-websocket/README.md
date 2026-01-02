@@ -42,6 +42,9 @@ Run examples with `cargo run -p alpaca-websocket --example <name>`:
 | `ws_stock_bars_stream` | Stream real-time stock bars |
 | `ws_crypto_stream` | Stream real-time crypto data |
 | `ws_trade_updates` | Stream order/trade updates |
+| `ws_websocket_config` | Configure WebSocket client |
+| `ws_reconnection` | Handle disconnections and reconnect |
+| `ws_stream_news` | Subscribe to real-time news |
 
 ```bash
 # Stream stock trades

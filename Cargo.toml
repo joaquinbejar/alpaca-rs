@@ -27,6 +27,7 @@ serde_urlencoded = "0.7"
 
 # WebSocket dependencies
 tokio-tungstenite = { version = "0.28", features = ["rustls-tls-webpki-roots"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
 futures-util = "0.3"
 
 # Crypto dependencies

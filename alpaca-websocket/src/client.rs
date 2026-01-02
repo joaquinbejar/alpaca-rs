@@ -9,6 +9,7 @@ use futures_util::{
     stream::{SplitSink, SplitStream, StreamExt},
 };
 use serde_json;
+use std::sync::Once;
 use std::time::Duration;
 use tokio::{
     net::TcpStream,
@@ -17,6 +18,16 @@ use tokio::{
 };
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, connect_async, tungstenite::Message};
 use tracing::{debug, error, info, warn};
+
+static CRYPTO_PROVIDER_INIT: Once = Once::new();
+
+/// Initialize the rustls crypto provider (ring).
+/// This must be called before any TLS connections are made.
+fn init_crypto_provider() {
+    CRYPTO_PROVIDER_INIT.call_once(|| {
+        let _ = rustls::crypto::ring::default_provider().install_default();
+    });
+}
 
 type WsStream = WebSocketStream<MaybeTlsStream<TcpStream>>;
 type WsSink = SplitSink<WsStream, Message>;
@@ -63,6 +74,9 @@ impl AlpacaWebSocketClient {
 
     /// Connect to the WebSocket and return a stream of messages
     pub async fn connect(&self) -> Result<AlpacaStream> {
+        // Initialize crypto provider for TLS
+        init_crypto_provider();
+
         let (sender, receiver) = mpsc::unbounded_channel();
         info!("Connecting to WebSocket: {}", self.url);
         let (ws_stream, _) = connect_async(&self.url).await?;

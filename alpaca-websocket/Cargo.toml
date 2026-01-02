@@ -27,6 +27,7 @@ url = { workspace = true }
 chrono = { workspace = true }
 uuid = { workspace = true }
 thiserror = { workspace = true }
+rustls = { workspace = true }
 
 [dev-dependencies]
 dotenvy = { workspace = true }
