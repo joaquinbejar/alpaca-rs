@@ -83,12 +83,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Examples
 
-Detailed examples are available in the `examples/` directory:
-- `base_credentials_from_env.rs`: Loading API keys and automated .env support
-- `base_error_handling.rs`: Handling API errors and retryable status
-- `base_order_types.rs`: Order configuration (Market, Limit, etc.)
-- `base_bar_params_builder.rs`: Market data query builders
-- `base_asset_filtering.rs`: Querying and filtering available assets
+### Integration & Advanced Examples
+
+Run with `cargo run --example <name>`:
+
+| Example | Description |
+|---------|-------------|
+| `integration_http_websocket` | Combine HTTP and WebSocket clients |
+| `integration_order_lifecycle` | Complete order lifecycle workflow |
+| `advanced_error_handling` | Comprehensive error handling patterns |
+| `advanced_retry_strategies` | Retry patterns with exponential backoff |
+| `advanced_rate_limiting` | Rate limiting strategies |
+
+### Base Examples
+
+| Example | Description |
+|---------|-------------|
+| `base_credentials_from_env` | Loading API keys and .env support |
+| `base_error_handling` | Handling API errors |
+| `base_order_types` | Order configuration (Market, Limit, etc.) |
+| `base_bar_params_builder` | Market data query builders |
+| `base_asset_filtering` | Querying and filtering assets |
+
+See also crate-specific examples in each crate's `examples/` directory.
 
 ## Contribution and Contact
 
