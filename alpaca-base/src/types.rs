@@ -358,37 +358,59 @@ pub enum PositionSide {
 /// Market data bar
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Bar {
+    #[serde(rename = "t")]
     pub timestamp: DateTime<Utc>,
+    #[serde(rename = "o")]
     pub open: f64,
+    #[serde(rename = "h")]
     pub high: f64,
+    #[serde(rename = "l")]
     pub low: f64,
+    #[serde(rename = "c")]
     pub close: f64,
+    #[serde(rename = "v")]
     pub volume: u64,
+    #[serde(rename = "n")]
     pub trade_count: Option<u64>,
+    #[serde(rename = "vw")]
     pub vwap: Option<f64>,
 }
 
 /// Market data quote
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Quote {
+    #[serde(rename = "t")]
     pub timestamp: DateTime<Utc>,
+    #[serde(rename = "z")]
     pub timeframe: String,
+    #[serde(rename = "bp")]
     pub bid_price: f64,
+    #[serde(rename = "bs")]
     pub bid_size: u32,
+    #[serde(rename = "ap")]
     pub ask_price: f64,
+    #[serde(rename = "as")]
     pub ask_size: u32,
+    #[serde(rename = "bx")]
     pub bid_exchange: String,
+    #[serde(rename = "ax")]
     pub ask_exchange: String,
 }
 
 /// Market data trade
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Trade {
+    #[serde(rename = "t")]
     pub timestamp: DateTime<Utc>,
+    #[serde(rename = "p")]
     pub price: f64,
+    #[serde(rename = "s")]
     pub size: u32,
+    #[serde(rename = "x")]
     pub exchange: String,
+    #[serde(rename = "c")]
     pub conditions: Vec<String>,
+    #[serde(rename = "i")]
     pub id: u64,
 }
 
