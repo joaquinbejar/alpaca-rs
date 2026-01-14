@@ -240,7 +240,7 @@ pub struct Order {
 
 /// Order class.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "snake_case", from = "String")]
 pub enum OrderClass {
     /// Simple order.
     Simple,
@@ -250,6 +250,21 @@ pub enum OrderClass {
     Oco,
     /// One-triggers-other order.
     Oto,
+}
+
+impl From<String> for OrderClass {
+    fn from(string: String) -> Self {
+        use OrderClass::*;
+
+        return match string.as_str() {
+            "" => Simple,
+            "simple" => Simple,
+            "bracket" => Bracket,
+            "oco" => Oco,
+            "oto" => Oto,
+            _ => Simple,
+        };
+    }
 }
 
 /// Order type.
@@ -5529,6 +5544,10 @@ mod tests {
 
     #[test]
     fn test_order_class_serialization() {
+        let oc = OrderClass::Simple;
+        let json = serde_json::to_string(&oc).unwrap();
+        assert_eq!(json, "\"simple\"");
+
         let oc = OrderClass::Bracket;
         let json = serde_json::to_string(&oc).unwrap();
         assert_eq!(json, "\"bracket\"");
@@ -5540,6 +5559,24 @@ mod tests {
         let oc = OrderClass::Oto;
         let json = serde_json::to_string(&oc).unwrap();
         assert_eq!(json, "\"oto\"");
+    }
+
+    #[test]
+    fn test_order_class_deserialization() {
+        let oc: OrderClass = serde_json::from_str("\"\"").unwrap();
+        assert_eq!(oc, OrderClass::Simple);
+
+        let oc: OrderClass = serde_json::from_str("\"simple\"").unwrap();
+        assert_eq!(oc, OrderClass::Simple);
+
+        let oc: OrderClass = serde_json::from_str("\"bracket\"").unwrap();
+        assert_eq!(oc, OrderClass::Bracket);
+
+        let oc: OrderClass = serde_json::from_str("\"oco\"").unwrap();
+        assert_eq!(oc, OrderClass::Oco);
+
+        let oc: OrderClass = serde_json::from_str("\"oto\"").unwrap();
+        assert_eq!(oc, OrderClass::Oto);
     }
 
     #[test]
