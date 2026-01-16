@@ -240,7 +240,7 @@ pub struct Order {
 
 /// Order class.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "snake_case", from = "String")]
 pub enum OrderClass {
     /// Simple order.
     Simple,
@@ -250,6 +250,21 @@ pub enum OrderClass {
     Oco,
     /// One-triggers-other order.
     Oto,
+}
+
+impl From<String> for OrderClass {
+    fn from(string: String) -> Self {
+        use OrderClass::*;
+
+        return match string.as_str() {
+            "" => Simple,
+            "simple" => Simple,
+            "bracket" => Bracket,
+            "oco" => Oco,
+            "oto" => Oto,
+            _ => Simple,
+        };
+    }
 }
 
 /// Order type.
@@ -358,37 +373,59 @@ pub enum PositionSide {
 /// Market data bar
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Bar {
+    #[serde(rename = "t")]
     pub timestamp: DateTime<Utc>,
+    #[serde(rename = "o")]
     pub open: f64,
+    #[serde(rename = "h")]
     pub high: f64,
+    #[serde(rename = "l")]
     pub low: f64,
+    #[serde(rename = "c")]
     pub close: f64,
+    #[serde(rename = "v")]
     pub volume: u64,
+    #[serde(rename = "n")]
     pub trade_count: Option<u64>,
+    #[serde(rename = "vw")]
     pub vwap: Option<f64>,
 }
 
 /// Market data quote
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Quote {
+    #[serde(rename = "t")]
     pub timestamp: DateTime<Utc>,
+    #[serde(rename = "z")]
     pub timeframe: String,
+    #[serde(rename = "bp")]
     pub bid_price: f64,
+    #[serde(rename = "bs")]
     pub bid_size: u32,
+    #[serde(rename = "ap")]
     pub ask_price: f64,
+    #[serde(rename = "as")]
     pub ask_size: u32,
+    #[serde(rename = "bx")]
     pub bid_exchange: String,
+    #[serde(rename = "ax")]
     pub ask_exchange: String,
 }
 
 /// Market data trade
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Trade {
+    #[serde(rename = "t")]
     pub timestamp: DateTime<Utc>,
+    #[serde(rename = "p")]
     pub price: f64,
+    #[serde(rename = "s")]
     pub size: u32,
+    #[serde(rename = "x")]
     pub exchange: String,
+    #[serde(rename = "c")]
     pub conditions: Vec<String>,
+    #[serde(rename = "i")]
     pub id: u64,
 }
 
@@ -5507,6 +5544,10 @@ mod tests {
 
     #[test]
     fn test_order_class_serialization() {
+        let oc = OrderClass::Simple;
+        let json = serde_json::to_string(&oc).unwrap();
+        assert_eq!(json, "\"simple\"");
+
         let oc = OrderClass::Bracket;
         let json = serde_json::to_string(&oc).unwrap();
         assert_eq!(json, "\"bracket\"");
@@ -5518,6 +5559,24 @@ mod tests {
         let oc = OrderClass::Oto;
         let json = serde_json::to_string(&oc).unwrap();
         assert_eq!(json, "\"oto\"");
+    }
+
+    #[test]
+    fn test_order_class_deserialization() {
+        let oc: OrderClass = serde_json::from_str("\"\"").unwrap();
+        assert_eq!(oc, OrderClass::Simple);
+
+        let oc: OrderClass = serde_json::from_str("\"simple\"").unwrap();
+        assert_eq!(oc, OrderClass::Simple);
+
+        let oc: OrderClass = serde_json::from_str("\"bracket\"").unwrap();
+        assert_eq!(oc, OrderClass::Bracket);
+
+        let oc: OrderClass = serde_json::from_str("\"oco\"").unwrap();
+        assert_eq!(oc, OrderClass::Oco);
+
+        let oc: OrderClass = serde_json::from_str("\"oto\"").unwrap();
+        assert_eq!(oc, OrderClass::Oto);
     }
 
     #[test]
