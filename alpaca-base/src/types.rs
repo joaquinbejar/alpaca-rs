@@ -256,14 +256,14 @@ impl From<String> for OrderClass {
     fn from(string: String) -> Self {
         use OrderClass::*;
 
-        return match string.as_str() {
+        match string.as_str() {
             "" => Simple,
             "simple" => Simple,
             "bracket" => Bracket,
             "oco" => Oco,
             "oto" => Oto,
             _ => Simple,
-        };
+        }
     }
 }
 
