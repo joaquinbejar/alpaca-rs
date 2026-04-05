@@ -243,6 +243,7 @@ pub struct Order {
 #[serde(rename_all = "snake_case", from = "String")]
 pub enum OrderClass {
     /// Simple order.
+    #[serde(alias = "")]
     Simple,
     /// Bracket order with take-profit and stop-loss.
     Bracket,
