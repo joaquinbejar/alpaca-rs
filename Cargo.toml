@@ -11,12 +11,12 @@ resolver = "2"
 # Core dependencies
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-tokio = { version = "1.48", features = ["full"] }
+tokio = { version = "1.52", features = ["full"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 thiserror = "2.0"
 chrono = { version = "0.4", features = ["serde"] }
-uuid = { version = "1.0", features = ["v4", "serde"] }
+uuid = { version = "1.23", features = ["v4", "serde"] }
 dotenv = "0.15"
 
 # HTTP client dependencies
@@ -26,22 +26,22 @@ urlencoding = "2.1"
 serde_urlencoded = "0.7"
 
 # WebSocket dependencies
-tokio-tungstenite = { version = "0.28", features = ["rustls-tls-webpki-roots"] }
+tokio-tungstenite = { version = "0.29", features = ["rustls-tls-webpki-roots"] }
 rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
 futures-util = "0.3"
 
 # Crypto dependencies
-hmac = "0.12"
-sha2 = "0.10"
+hmac = "0.13"
+sha2 = "0.11"
 base64 = "0.22"
 
 # Utility dependencies
-rand = "0.9"
+rand = "0.10"
 dotenvy = "0.15"
 
 # Internal workspace dependencies
-alpaca-base = { path = "alpaca-base", version = "0.25.1" }
-alpaca-http = { path = "alpaca-http", version = "0.21.1" }
-alpaca-websocket = { path = "alpaca-websocket", version = "0.3.1" }
-alpaca-fix = { path = "alpaca-fix", version = "0.3.1" }
+alpaca-base = { path = "alpaca-base", version = "0.26.0" }
+alpaca-http = { path = "alpaca-http", version = "0.21.2" }
+alpaca-websocket = { path = "alpaca-websocket", version = "0.4.0" }
+alpaca-fix = { path = "alpaca-fix", version = "0.3.2" }
 

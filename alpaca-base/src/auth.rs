@@ -1,7 +1,7 @@
 use crate::error::{AlpacaError, Result};
 use base64::{Engine as _, engine::general_purpose};
 use chrono::{DateTime, Utc};
-use hmac::{Hmac, Mac};
+use hmac::{Hmac, KeyInit, Mac};
 use sha2::Sha256;
 use std::collections::HashMap;
 

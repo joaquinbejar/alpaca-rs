@@ -29,7 +29,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-alpaca-base = "0.25.1"
+alpaca-base = "0.26.0"
 ```
 
 ## Usage

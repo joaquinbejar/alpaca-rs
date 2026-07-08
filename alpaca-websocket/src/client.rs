@@ -49,6 +49,12 @@ pub enum DataFeed {
     Iex,
     /// SIP data (paid, real-time)
     Sip,
+    /// 15-minute delayed SIP data
+    DelayedSip,
+    /// BOATS (Blue Ocean ATS) overnight trading data
+    Boats,
+    /// Derived Alpaca overnight feed
+    Overnight,
     /// Crypto data
     Crypto,
 }
@@ -79,6 +85,9 @@ impl AlpacaWebSocketClient {
         let url = match feed {
             DataFeed::Iex => "wss://stream.data.alpaca.markets/v2/iex",
             DataFeed::Sip => "wss://stream.data.alpaca.markets/v2/sip",
+            DataFeed::DelayedSip => "wss://stream.data.alpaca.markets/v2/delayed_sip",
+            DataFeed::Boats => "wss://stream.data.alpaca.markets/v1beta1/boats",
+            DataFeed::Overnight => "wss://stream.data.alpaca.markets/v1beta1/overnight",
             DataFeed::Crypto => "wss://stream.data.alpaca.markets/v1beta3/crypto/us",
         };
 
@@ -517,5 +526,35 @@ mod tests {
         let json = r#"{"T":"success","msg":"authenticated"}"#;
         let result = AlpacaWebSocketClient::parse_message(json);
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_with_feed_urls() {
+        let cases = [
+            (DataFeed::Iex, "wss://stream.data.alpaca.markets/v2/iex"),
+            (DataFeed::Sip, "wss://stream.data.alpaca.markets/v2/sip"),
+            (
+                DataFeed::DelayedSip,
+                "wss://stream.data.alpaca.markets/v2/delayed_sip",
+            ),
+            (
+                DataFeed::Boats,
+                "wss://stream.data.alpaca.markets/v1beta1/boats",
+            ),
+            (
+                DataFeed::Overnight,
+                "wss://stream.data.alpaca.markets/v1beta1/overnight",
+            ),
+            (
+                DataFeed::Crypto,
+                "wss://stream.data.alpaca.markets/v1beta3/crypto/us",
+            ),
+        ];
+
+        for (feed, expected_url) in cases {
+            let credentials = Credentials::new("test_key".to_string(), "test_secret".to_string());
+            let client = AlpacaWebSocketClient::with_feed(credentials, Environment::Paper, feed);
+            assert_eq!(client.url(), expected_url);
+        }
     }
 }

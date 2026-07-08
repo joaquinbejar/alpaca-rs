@@ -28,7 +28,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-alpaca-fix = "0.3.1"
+alpaca-fix = "0.3.2"
 ```
 
 ## Examples

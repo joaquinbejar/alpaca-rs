@@ -1051,6 +1051,13 @@ pub enum DataFeed {
     Sip,
     /// OTC (Over-The-Counter) data.
     Otc,
+    /// 15-minute delayed SIP data.
+    #[serde(rename = "delayed_sip")]
+    DelayedSip,
+    /// BOATS (Blue Ocean ATS) overnight trading data.
+    Boats,
+    /// Derived Alpaca overnight feed.
+    Overnight,
 }
 
 /// Stock snapshot with latest market data.
@@ -5708,6 +5715,18 @@ mod tests {
         let feed = DataFeed::Iex;
         let json = serde_json::to_string(&feed).unwrap();
         assert_eq!(json, "\"iex\"");
+
+        let feed = DataFeed::DelayedSip;
+        let json = serde_json::to_string(&feed).unwrap();
+        assert_eq!(json, "\"delayed_sip\"");
+
+        let feed = DataFeed::Boats;
+        let json = serde_json::to_string(&feed).unwrap();
+        assert_eq!(json, "\"boats\"");
+
+        let feed = DataFeed::Overnight;
+        let json = serde_json::to_string(&feed).unwrap();
+        assert_eq!(json, "\"overnight\"");
     }
 
     #[test]
