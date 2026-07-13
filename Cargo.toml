@@ -42,6 +42,6 @@ dotenvy = "0.15"
 # Internal workspace dependencies
 alpaca-base = { path = "alpaca-base", version = "0.26.0" }
 alpaca-http = { path = "alpaca-http", version = "0.21.2" }
-alpaca-websocket = { path = "alpaca-websocket", version = "0.4.0" }
+alpaca-websocket = { path = "alpaca-websocket", version = "0.5.0" }
 alpaca-fix = { path = "alpaca-fix", version = "0.3.2" }
 

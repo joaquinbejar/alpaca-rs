@@ -43,7 +43,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Connect and subscribe
     println!("\nConnecting to WebSocket...");
-    let stream = client.subscribe_market_data(subscription).await?;
+    let stream = client.subscribe_market_data(subscription).await?.updates();
     println!("Connected! Waiting for bars...\n");
 
     // Process incoming bars

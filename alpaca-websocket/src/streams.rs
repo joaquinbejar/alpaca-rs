@@ -7,11 +7,21 @@ use alpaca_base::types::*;
 use futures_util::stream::Stream;
 use std::pin::Pin;
 use std::task::{Context, Poll};
+use std::time::Duration;
 use tokio::sync::mpsc;
 
-/// Stream of market data updates
+/// Stream of market data events.
+///
+/// Yields [`MarketDataEvent`]s: data updates plus connection lifecycle
+/// signals (reconnection progress, consumer lag, terminal disconnect).
+/// The stream ends (`next()` returns `None`) once the connection task has
+/// exited, which only happens after a [`MarketDataEvent::Disconnected`]
+/// event or when this stream is dropped.
+///
+/// Dropping the stream closes the underlying WebSocket connection and
+/// stops the background task that owns it.
 pub struct MarketDataStream {
-    receiver: mpsc::UnboundedReceiver<MarketDataUpdate>,
+    receiver: mpsc::Receiver<MarketDataEvent>,
 }
 
 /// Market data update enum
@@ -22,15 +32,51 @@ pub enum MarketDataUpdate {
     Bar { symbol: String, bar: Bar },
 }
 
+/// Event emitted by a [`MarketDataStream`].
+///
+/// Besides data updates, the stream reports connection lifecycle changes so
+/// consumers can observe reconnection progress and backpressure instead of
+/// the channel silently closing.
+#[derive(Debug, Clone)]
+pub enum MarketDataEvent {
+    /// A market data update (trade, quote, or bar).
+    Update(MarketDataUpdate),
+    /// The consumer was too slow and `missed` updates were dropped because
+    /// the bounded channel was full.
+    Lagged { missed: u64 },
+    /// The connection was lost; a reconnect will be attempted after `delay`.
+    Reconnecting { attempt: u32, delay: Duration },
+    /// The connection was re-established and the active subscription set
+    /// was re-issued.
+    Reconnected,
+    /// The connection is permanently down (reconnection disabled or
+    /// retries exhausted). This is the last event before the stream ends.
+    Disconnected { reason: String },
+}
+
 impl MarketDataStream {
     /// Create a new market data stream
-    pub fn new(receiver: mpsc::UnboundedReceiver<MarketDataUpdate>) -> Self {
+    pub fn new(receiver: mpsc::Receiver<MarketDataEvent>) -> Self {
         Self { receiver }
+    }
+
+    /// Filter the stream down to data updates only, discarding lifecycle
+    /// events. Convenient when reconnection/lag signals are not needed.
+    pub fn updates(self) -> impl Stream<Item = MarketDataUpdate> + Unpin {
+        Box::pin(futures_util::stream::StreamExt::filter_map(
+            self,
+            |event| async move {
+                match event {
+                    MarketDataEvent::Update(update) => Some(update),
+                    _ => None,
+                }
+            },
+        ))
     }
 }
 
 impl Stream for MarketDataStream {
-    type Item = MarketDataUpdate;
+    type Item = MarketDataEvent;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         self.receiver.poll_recv(cx)

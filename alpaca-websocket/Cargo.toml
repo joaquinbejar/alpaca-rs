@@ -1,6 +1,6 @@
 [package]
 name = "alpaca-websocket"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2024"
 authors = ["Joaquin Bejar <jb@taunais.com>"]
 description = "WebSocket client for Alpaca trading platform real-time data"
@@ -31,3 +31,4 @@ rustls = { workspace = true }
 
 [dev-dependencies]
 dotenvy = { workspace = true }
+tracing-subscriber = { workspace = true }
