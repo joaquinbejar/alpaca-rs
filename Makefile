@@ -81,7 +81,7 @@ coverage:
 	export LOGLEVEL=WARN
 	cargo install cargo-tarpaulin
 	mkdir -p coverage
-	cargo tarpaulin --verbose --all-features --workspace --timeout 0 --out Xml
+	cargo tarpaulin --verbose --engine llvm --all-features --workspace --timeout 0 --out Xml
 
 .PHONY: coverage-html
 coverage-html:
