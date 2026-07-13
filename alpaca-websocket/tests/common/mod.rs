@@ -8,9 +8,7 @@ use std::sync::{Arc, Mutex};
 
 use alpaca_base::auth::Credentials;
 use alpaca_base::types::Environment;
-use alpaca_websocket::{
-    AlpacaWebSocketClient, MarketDataEvent, MarketDataStream, SubscribeMessage, SubscriptionBuilder,
-};
+use alpaca_websocket::{AlpacaWebSocketClient, SubscribeMessage, SubscriptionBuilder};
 use futures_util::{SinkExt, StreamExt};
 use tokio::net::{TcpListener, TcpStream};
 use tokio_tungstenite::{WebSocketStream, accept_async, tungstenite::Message};
@@ -76,12 +74,42 @@ pub fn trade_frame(id: u64) -> Message {
     )
 }
 
-pub async fn collect_events(mut stream: MarketDataStream) -> Vec<MarketDataEvent> {
+pub async fn collect_events<S: futures_util::Stream + Unpin>(mut stream: S) -> Vec<S::Item> {
     let mut events = Vec::new();
     while let Some(event) = stream.next().await {
         events.push(event);
     }
     events
+}
+
+/// Server side of the trading-stream handshake: read the auth frame and
+/// reply with an authorized status. Returns the raw auth frame.
+pub async fn trading_handshake(ws: &mut ServerWs) -> String {
+    let auth = next_text(ws).await;
+    ws.send(Message::Text(
+        r#"{"stream":"authorization","data":{"status":"authorized","action":"authenticate"}}"#
+            .into(),
+    ))
+    .await
+    .unwrap();
+    auth
+}
+
+pub fn trade_update_frame() -> Message {
+    use alpaca_base::test_utils::fixtures::sample_order;
+    use alpaca_base::types::OrderSide;
+    use alpaca_websocket::{TradeUpdateEvent, TradeUpdateMessage, WebSocketMessage};
+
+    let update = TradeUpdateMessage {
+        event: TradeUpdateEvent::Fill,
+        order: sample_order("AAPL", OrderSide::Buy, "10"),
+        timestamp: chrono::Utc::now(),
+        position_qty: None,
+        price: None,
+        qty: None,
+    };
+    let frame = serde_json::to_string(&WebSocketMessage::TradeUpdate(Box::new(update))).unwrap();
+    Message::Text(frame.into())
 }
 
 /// In-memory log sink for asserting on emitted tracing output.

@@ -83,20 +83,59 @@ impl Stream for MarketDataStream {
     }
 }
 
-/// Stream of trading updates
+/// Stream of trading events.
+///
+/// Yields [`TradingEvent`]s: order updates plus connection lifecycle
+/// signals, with the same ownership and delivery semantics as
+/// [`MarketDataStream`]: a background task owns the socket, the channel is
+/// bounded, and the stream ends only after a [`TradingEvent::Disconnected`]
+/// event or when it is dropped.
 pub struct TradingStream {
-    receiver: mpsc::UnboundedReceiver<TradeUpdateMessage>,
+    receiver: mpsc::Receiver<TradingEvent>,
+}
+
+/// Event emitted by a [`TradingStream`].
+///
+/// Mirrors [`MarketDataEvent`] for the trading-updates channel.
+#[derive(Debug, Clone)]
+pub enum TradingEvent {
+    /// An order update (fill, cancel, etc.).
+    Update(Box<TradeUpdateMessage>),
+    /// The consumer was too slow and `missed` updates were dropped because
+    /// the bounded channel was full.
+    Lagged { missed: u64 },
+    /// The connection was lost; a reconnect will be attempted after `delay`.
+    Reconnecting { attempt: u32, delay: Duration },
+    /// The connection was re-established and re-authenticated.
+    Reconnected,
+    /// The connection is permanently down (reconnection disabled or
+    /// retries exhausted). This is the last event before the stream ends.
+    Disconnected { reason: String },
 }
 
 impl TradingStream {
     /// Create a new trading stream
-    pub fn new(receiver: mpsc::UnboundedReceiver<TradeUpdateMessage>) -> Self {
+    pub fn new(receiver: mpsc::Receiver<TradingEvent>) -> Self {
         Self { receiver }
+    }
+
+    /// Filter the stream down to order updates only, discarding lifecycle
+    /// events. Convenient when reconnection/lag signals are not needed.
+    pub fn updates(self) -> impl Stream<Item = TradeUpdateMessage> + Unpin {
+        Box::pin(futures_util::stream::StreamExt::filter_map(
+            self,
+            |event| async move {
+                match event {
+                    TradingEvent::Update(update) => Some(*update),
+                    _ => None,
+                }
+            },
+        ))
     }
 }
 
 impl Stream for TradingStream {
-    type Item = TradeUpdateMessage;
+    type Item = TradingEvent;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         self.receiver.poll_recv(cx)

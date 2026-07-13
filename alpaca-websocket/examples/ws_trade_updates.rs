@@ -32,7 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Connect and subscribe to trade updates
     println!("\nConnecting to trading WebSocket...");
-    let stream = client.subscribe_trading_updates().await?;
+    let stream = client.subscribe_trading_updates().await?.updates();
     println!("Connected! Waiting for trade updates...\n");
 
     // Process incoming trade updates

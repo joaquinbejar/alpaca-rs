@@ -10,6 +10,7 @@ use futures_util::{
     stream::{SplitSink, SplitStream, StreamExt},
 };
 use serde_json;
+use std::future::Future;
 use std::sync::Once;
 use std::time::Duration;
 use tokio::{
@@ -239,11 +240,28 @@ impl AlpacaWebSocketClient {
         let stream = open_market_data_stream(&url, &credentials, &subscription, &config).await?;
 
         let (sender, receiver) = mpsc::channel(config.message_buffer_size.max(1));
-        tokio::spawn(run_market_data_task(
+        let open = {
+            let (url, credentials, subscription, config) =
+                (url, credentials, subscription, config.clone());
+            move || {
+                let (url, credentials, subscription, config) = (
+                    url.clone(),
+                    credentials.clone(),
+                    subscription.clone(),
+                    config.clone(),
+                );
+                async move { open_market_data_stream(&url, &credentials, &subscription, &config).await }
+            }
+        };
+        tokio::spawn(run_stream_task(
             stream,
-            url,
-            credentials,
-            subscription,
+            open,
+            |text| {
+                parse_market_data_updates(text)
+                    .into_iter()
+                    .map(MarketDataEvent::Update)
+                    .collect()
+            },
             config,
             sender,
         ));
@@ -251,19 +269,58 @@ impl AlpacaWebSocketClient {
         Ok(MarketDataStream::new(receiver))
     }
 
-    /// Subscribe to trading updates
+    /// Subscribe to trading updates with the default [`WebSocketConfig`].
+    ///
+    /// See [`Self::subscribe_trading_updates_with_config`] for connection
+    /// ownership and lifecycle semantics.
     pub async fn subscribe_trading_updates(&self) -> Result<TradingStream> {
-        let stream = self.connect().await?;
-        let (sender, receiver) = mpsc::unbounded_channel();
+        self.subscribe_trading_updates_with_config(WebSocketConfig::default())
+            .await
+    }
 
-        tokio::spawn(async move {
-            let mut trading_stream = stream.trading_updates();
-            while let Some(update) = trading_stream.next().await {
-                if sender.send(update).is_err() {
-                    break;
-                }
+    /// Subscribe to trading updates with an explicit [`WebSocketConfig`].
+    ///
+    /// # Connection ownership and lifecycle
+    ///
+    /// Same semantics as [`Self::subscribe_market_data_with_config`]: the
+    /// returned [`TradingStream`] is backed by a background task that owns
+    /// the WebSocket connection, reconnects with capped exponential backoff
+    /// (re-authenticating on each attempt), delivers events over a bounded
+    /// channel of `message_buffer_size` entries reporting drops via
+    /// [`TradingEvent::Lagged`], and emits a final
+    /// [`TradingEvent::Disconnected`] before the stream ends. Dropping the
+    /// stream stops the task and closes the connection.
+    pub async fn subscribe_trading_updates_with_config(
+        &self,
+        config: WebSocketConfig,
+    ) -> Result<TradingStream> {
+        // Initialize crypto provider for TLS
+        init_crypto_provider();
+
+        let url = self.url.clone();
+        let credentials = self.credentials.clone();
+        let stream = open_trading_stream(&url, &credentials, &config).await?;
+
+        let (sender, receiver) = mpsc::channel(config.message_buffer_size.max(1));
+        let open = {
+            let (url, credentials, config) = (url, credentials, config.clone());
+            move || {
+                let (url, credentials, config) = (url.clone(), credentials.clone(), config.clone());
+                async move { open_trading_stream(&url, &credentials, &config).await }
             }
-        });
+        };
+        tokio::spawn(run_stream_task(
+            stream,
+            open,
+            |text| {
+                parse_trading_updates(text)
+                    .into_iter()
+                    .map(|update| TradingEvent::Update(Box::new(update)))
+                    .collect()
+            },
+            config,
+            sender,
+        ));
 
         Ok(TradingStream::new(receiver))
     }
@@ -403,16 +460,26 @@ fn frame_error(text: &str) -> Option<String> {
     };
     frames.iter().find_map(|frame| {
         if frame.get("T").and_then(|t| t.as_str()) == Some("error") {
-            Some(
+            return Some(
                 frame
                     .get("msg")
                     .and_then(|m| m.as_str())
                     .unwrap_or("unknown error")
                     .to_string(),
-            )
-        } else {
-            None
+            );
         }
+        // Trading-stream style: {"stream":"authorization","data":{"status":...}}
+        if frame.get("stream").and_then(|s| s.as_str()) == Some("authorization") {
+            let status = frame
+                .get("data")
+                .and_then(|d| d.get("status"))
+                .and_then(|s| s.as_str())
+                .unwrap_or("unknown");
+            if status != "authorized" {
+                return Some(format!("authorization status: {status}"));
+            }
+        }
+        None
     })
 }
 
@@ -550,17 +617,110 @@ fn parse_market_data_updates(text: &str) -> Vec<MarketDataUpdate> {
         .collect()
 }
 
+/// Connect and authenticate on a trading socket, bounded by the configured
+/// connection timeout. Unlike market data there is no server hello and no
+/// subscription frame: authentication is the whole handshake.
+async fn open_trading_stream(
+    url: &str,
+    credentials: &Credentials,
+    config: &WebSocketConfig,
+) -> Result<WsReceiver> {
+    let handshake = async {
+        info!("Connecting to WebSocket: {}", url);
+        let (ws_stream, _) = connect_async(url).await?;
+        let (mut sink, mut stream) = ws_stream.split();
+
+        send_auth(credentials, &mut sink).await?;
+        expect_ok_frame(&mut stream, "authentication").await?;
+
+        Ok(stream)
+    };
+
+    match timeout(
+        Duration::from_millis(config.connection_timeout_ms),
+        handshake,
+    )
+    .await
+    {
+        Ok(result) => result,
+        Err(_) => Err(AlpacaError::WebSocket(format!(
+            "handshake timed out after {}ms",
+            config.connection_timeout_ms
+        ))),
+    }
+}
+
+/// Parse a trading text frame (a single message or an array) into order
+/// updates, ignoring non-trade-update messages.
+fn parse_trading_updates(text: &str) -> Vec<TradeUpdateMessage> {
+    let Ok(value) = serde_json::from_str::<serde_json::Value>(text) else {
+        return Vec::new();
+    };
+    let frames = match value {
+        serde_json::Value::Array(items) => items,
+        other => vec![other],
+    };
+    frames
+        .into_iter()
+        .filter_map(
+            |frame| match serde_json::from_value::<WebSocketMessage>(frame) {
+                Ok(WebSocketMessage::TradeUpdate(update)) => Some(*update),
+                _ => None,
+            },
+        )
+        .collect()
+}
+
+/// Lifecycle-event constructors shared by the market-data and trading
+/// streaming tasks.
+trait StreamEvents: Sized + Send + 'static {
+    fn lagged(missed: u64) -> Self;
+    fn reconnecting(attempt: u32, delay: Duration) -> Self;
+    fn reconnected() -> Self;
+    fn disconnected(reason: String) -> Self;
+}
+
+impl StreamEvents for MarketDataEvent {
+    fn lagged(missed: u64) -> Self {
+        Self::Lagged { missed }
+    }
+    fn reconnecting(attempt: u32, delay: Duration) -> Self {
+        Self::Reconnecting { attempt, delay }
+    }
+    fn reconnected() -> Self {
+        Self::Reconnected
+    }
+    fn disconnected(reason: String) -> Self {
+        Self::Disconnected { reason }
+    }
+}
+
+impl StreamEvents for TradingEvent {
+    fn lagged(missed: u64) -> Self {
+        Self::Lagged { missed }
+    }
+    fn reconnecting(attempt: u32, delay: Duration) -> Self {
+        Self::Reconnecting { attempt, delay }
+    }
+    fn reconnected() -> Self {
+        Self::Reconnected
+    }
+    fn disconnected(reason: String) -> Self {
+        Self::Disconnected { reason }
+    }
+}
+
 /// Forward a data update without blocking the socket reader. When the
 /// bounded channel is full the update is dropped and counted; the count is
-/// delivered later as a [`MarketDataEvent::Lagged`] event. `Err(())` means
-/// the consumer dropped the stream.
-fn send_update(
-    sender: &mpsc::Sender<MarketDataEvent>,
+/// delivered later as a `Lagged` event. `Err(())` means the consumer
+/// dropped the stream.
+fn send_update<E: StreamEvents>(
+    sender: &mpsc::Sender<E>,
     missed: &mut u64,
-    update: MarketDataUpdate,
+    update: E,
 ) -> std::result::Result<(), ()> {
     if *missed > 0 {
-        match sender.try_send(MarketDataEvent::Lagged { missed: *missed }) {
+        match sender.try_send(E::lagged(*missed)) {
             Ok(()) => *missed = 0,
             Err(TrySendError::Full(_)) => {
                 *missed += 1;
@@ -569,7 +729,7 @@ fn send_update(
             Err(TrySendError::Closed(_)) => return Err(()),
         }
     }
-    match sender.try_send(MarketDataEvent::Update(update)) {
+    match sender.try_send(update) {
         Ok(()) => Ok(()),
         Err(TrySendError::Full(_)) => {
             *missed += 1;
@@ -582,17 +742,13 @@ fn send_update(
 /// Forward a lifecycle event, waiting for channel capacity so it is never
 /// dropped. Flushes any pending lag count first. Returns `false` when the
 /// consumer dropped the stream.
-async fn send_lifecycle(
-    sender: &mpsc::Sender<MarketDataEvent>,
+async fn send_lifecycle<E: StreamEvents>(
+    sender: &mpsc::Sender<E>,
     missed: &mut u64,
-    event: MarketDataEvent,
+    event: E,
 ) -> bool {
     if *missed > 0 {
-        if sender
-            .send(MarketDataEvent::Lagged { missed: *missed })
-            .await
-            .is_err()
-        {
+        if sender.send(E::lagged(*missed)).await.is_err() {
             return false;
         }
         *missed = 0;
@@ -600,26 +756,31 @@ async fn send_lifecycle(
     sender.send(event).await.is_ok()
 }
 
-/// Background task that owns the market-data socket: reads frames, forwards
-/// events to the consumer, and reconnects with capped exponential backoff,
-/// re-issuing the active subscription set after each reconnect. Exits when
-/// the consumer drops the stream or reconnection gives up.
-async fn run_market_data_task(
+/// Background task that owns a streaming socket: reads frames, forwards
+/// events to the consumer, and reconnects with capped exponential backoff
+/// by calling `open` (which re-runs the full handshake, so the active
+/// subscription/authentication is re-issued). Exits when the consumer
+/// drops the stream or reconnection gives up.
+async fn run_stream_task<E, O, Fut, P>(
     mut stream: WsReceiver,
-    url: String,
-    credentials: Credentials,
-    subscription: SubscribeMessage,
+    open: O,
+    parse: P,
     config: WebSocketConfig,
-    sender: mpsc::Sender<MarketDataEvent>,
-) {
+    sender: mpsc::Sender<E>,
+) where
+    E: StreamEvents,
+    O: Fn() -> Fut,
+    Fut: Future<Output = Result<WsReceiver>>,
+    P: Fn(&str) -> Vec<E>,
+{
     let mut missed: u64 = 0;
     'connection: loop {
         let mut reason = loop {
             match stream.next().await {
                 Some(Ok(Message::Text(text))) => {
-                    for update in parse_market_data_updates(&text) {
+                    for update in parse(&text) {
                         if send_update(&sender, &mut missed, update).is_err() {
-                            debug!("Market data stream dropped by consumer");
+                            debug!("Stream dropped by consumer");
                             return;
                         }
                     }
@@ -632,12 +793,7 @@ async fn run_market_data_task(
         };
 
         if !config.reconnect_enabled {
-            let _ = send_lifecycle(
-                &sender,
-                &mut missed,
-                MarketDataEvent::Disconnected { reason },
-            )
-            .await;
+            let _ = send_lifecycle(&sender, &mut missed, E::disconnected(reason)).await;
             return;
         }
 
@@ -646,18 +802,16 @@ async fn run_market_data_task(
             attempt += 1;
             if attempt > config.reconnect_max_attempts {
                 error!(
-                    "Market data reconnection gave up after {} attempts",
+                    "Reconnection gave up after {} attempts",
                     config.reconnect_max_attempts
                 );
                 let _ = send_lifecycle(
                     &sender,
                     &mut missed,
-                    MarketDataEvent::Disconnected {
-                        reason: format!(
-                            "gave up after {} reconnect attempts: {}",
-                            config.reconnect_max_attempts, reason
-                        ),
-                    },
+                    E::disconnected(format!(
+                        "gave up after {} reconnect attempts: {}",
+                        config.reconnect_max_attempts, reason
+                    )),
                 )
                 .await;
                 return;
@@ -670,25 +824,19 @@ async fn run_market_data_task(
                     .min(config.reconnect_max_delay_ms),
             );
             warn!(
-                "Market data connection lost ({}); reconnecting in {:?} (attempt {}/{})",
+                "Connection lost ({}); reconnecting in {:?} (attempt {}/{})",
                 reason, delay, attempt, config.reconnect_max_attempts
             );
-            if !send_lifecycle(
-                &sender,
-                &mut missed,
-                MarketDataEvent::Reconnecting { attempt, delay },
-            )
-            .await
-            {
+            if !send_lifecycle(&sender, &mut missed, E::reconnecting(attempt, delay)).await {
                 return;
             }
             sleep(delay).await;
 
-            match open_market_data_stream(&url, &credentials, &subscription, &config).await {
+            match open().await {
                 Ok(new_stream) => {
                     stream = new_stream;
-                    info!("Market data connection re-established and resubscribed");
-                    if !send_lifecycle(&sender, &mut missed, MarketDataEvent::Reconnected).await {
+                    info!("Connection re-established");
+                    if !send_lifecycle(&sender, &mut missed, E::reconnected()).await {
                         return;
                     }
                     continue 'connection;
@@ -801,6 +949,37 @@ mod tests {
         );
         assert_eq!(frame_error(r#"[{"T":"success","msg":"connected"}]"#), None);
         assert_eq!(frame_error("not json"), None);
+        assert_eq!(
+            frame_error(r#"{"stream":"authorization","data":{"status":"unauthorized"}}"#),
+            Some("authorization status: unauthorized".to_string())
+        );
+        assert_eq!(
+            frame_error(r#"{"stream":"authorization","data":{"status":"authorized"}}"#),
+            None
+        );
+    }
+
+    #[test]
+    fn test_parse_trading_updates() {
+        let update = TradeUpdateMessage {
+            event: TradeUpdateEvent::Fill,
+            order: alpaca_base::test_utils::fixtures::sample_order(
+                "AAPL",
+                alpaca_base::types::OrderSide::Buy,
+                "10",
+            ),
+            timestamp: chrono::Utc::now(),
+            position_qty: None,
+            price: None,
+            qty: None,
+        };
+        let text = serde_json::to_string(&WebSocketMessage::TradeUpdate(Box::new(update))).unwrap();
+
+        let updates = parse_trading_updates(&text);
+        assert_eq!(updates.len(), 1);
+        assert_eq!(updates[0].order.symbol, "AAPL");
+        assert!(parse_trading_updates(r#"{"T":"success","msg":"connected"}"#).is_empty());
+        assert!(parse_trading_updates("not json").is_empty());
     }
 
     #[test]
