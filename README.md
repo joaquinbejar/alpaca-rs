@@ -149,3 +149,16 @@ We appreciate your interest and look forward to your contributions!
 ## Disclaimer
 
 This software is not officially associated with Alpaca Markets. Trading financial instruments carries risk, and this library is provided as-is without any guarantees. Always test thoroughly with a paper trading account before using in a live trading environment.
+
+<!-- related-projects:start -->
+## Related projects
+
+Repositories by the same author that this project depends on, and repositories that depend on it.
+
+### Used by
+
+| Repository | Description |
+|------------|-------------|
+| [ChainView](https://github.com/joaquinbejar/ChainView) | Terminal UI for option chains, Greeks and volatility, real-time and backtest replay. |
+
+<!-- related-projects:end -->
