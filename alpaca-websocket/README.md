@@ -28,7 +28,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-alpaca-websocket = "0.4.0"
+alpaca-websocket = "0.6.1"
 ```
 
 ## Examples
