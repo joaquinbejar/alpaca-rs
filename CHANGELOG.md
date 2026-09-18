@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Dependencies updated to latest stable versions (tokio 1.53, uuid 1.26, tokio-tungstenite 0.30, base64 0.23)
+
 ## [0.4.0] - 2026-01-01
 
 ### Added
