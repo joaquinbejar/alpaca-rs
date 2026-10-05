@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- CI and the Makefile coverage targets now require cargo-tarpaulin >= 0.37.5 (older releases cannot read Rust 1.99 coverage data); `--timeout 0` became `--timeout 600`, since 0.37.5 treats 0 as zero seconds.
+
 ## [0.26.1] - 2026-09-18
 
 alpaca-base 0.26.1, alpaca-http 0.21.3, alpaca-websocket 0.6.1, alpaca-fix 0.3.3

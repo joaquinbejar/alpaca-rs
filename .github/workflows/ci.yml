@@ -102,7 +102,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Install cargo-tarpaulin
-        run: cargo install cargo-tarpaulin
+        run: cargo install cargo-tarpaulin --locked --version '>=0.37.5'
       - name: Generate coverage
         run: cargo tarpaulin --engine llvm --all-features --workspace --out Xml
       - name: Upload coverage to Codecov
