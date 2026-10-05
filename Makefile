@@ -76,19 +76,30 @@ publish:
 	cargo package
 	cargo publish
 
+# Minimum cargo-tarpaulin: older releases cannot read the coverage data written
+# by Rust 1.99+. Reinstall when the local binary is missing or older than this,
+# instead of only checking that it exists.
+TARPAULIN_VERSION := 0.37.5
+
+.PHONY: check-cargo-tarpaulin
+check-cargo-tarpaulin:
+	@v=$$(cargo tarpaulin --version 2>/dev/null | awk '{print $$NF}'); \
+	if [ -z "$$v" ] || [ "$$(printf '%s\n%s\n' '$(TARPAULIN_VERSION)' "$$v" | sort -V | head -n1)" != '$(TARPAULIN_VERSION)' ]; then \
+		echo "Installing cargo-tarpaulin >= $(TARPAULIN_VERSION) (found: $${v:-none})"; \
+		cargo install cargo-tarpaulin --locked --version '>=$(TARPAULIN_VERSION)'; \
+	fi
+
 .PHONY: coverage
-coverage:
+coverage: check-cargo-tarpaulin
 	export LOGLEVEL=WARN
-	cargo install cargo-tarpaulin
 	mkdir -p coverage
-	cargo tarpaulin --verbose --engine llvm --all-features --workspace --timeout 0 --out Xml
+	cargo tarpaulin --verbose --engine llvm --all-features --workspace --timeout 600 --out Xml
 
 .PHONY: coverage-html
-coverage-html:
+coverage-html: check-cargo-tarpaulin
 	export LOGLEVEL=WARN
-	cargo install cargo-tarpaulin
 	mkdir -p coverage
-	cargo tarpaulin --color Always --engine llvm --tests --all-targets --all-features --workspace --timeout 0 --out Html
+	cargo tarpaulin --color Always --engine llvm --tests --all-targets --all-features --workspace --timeout 600 --out Html
 
 .PHONY: open-coverage
 open-coverage:
