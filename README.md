@@ -159,6 +159,6 @@ Repositories by the same author that this project depends on, and repositories t
 
 | Repository | Description |
 |------------|-------------|
-| [ChainView](https://github.com/joaquinbejar/ChainView) | Terminal UI for option chains, Greeks and volatility, real-time and backtest replay. |
+| [ChainView](https://github.com/joaquinbejar/ChainView) | Terminal UI for option chains, Greeks and volatility; uses alpaca-rs as its Alpaca Markets data source for real-time quotes and option chains. |
 
 <!-- related-projects:end -->
